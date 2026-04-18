@@ -1,5 +1,6 @@
 import EventEmitter from './EventEmitter';
 
+// 基于 canvas.clientWidth/Height 而非 window.innerWidth/Height，支持组件嵌入场景
 class SizeManager extends EventEmitter {
   canvas: HTMLCanvasElement;
   width: number = 0;
@@ -22,6 +23,7 @@ class SizeManager extends EventEmitter {
   private update(): void {
     this.width = this.canvas.clientWidth;
     this.height = this.canvas.clientHeight;
+    // 限制 pixelRatio 最大为 2，防止高 DPI 设备渲染压力过大
     this.pixelRatio = Math.min(window.devicePixelRatio, 2);
   }
 

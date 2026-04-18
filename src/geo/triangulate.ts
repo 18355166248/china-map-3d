@@ -8,8 +8,9 @@ export interface GeomData {
   uv: number[];
 }
 
+// group 格式：[groupId, indexLen, vertexCount, ...]，用于 MapLayer 按组拆分缓冲区
 interface GeomGroup extends GeomData {
-  group: number[]; // [groupId, indexLen, vertexCount, ...]
+  group: number[];
 }
 
 type BboxProj = [number, number, number, number];
@@ -36,7 +37,7 @@ function vecNormalize(v: number[]): void {
   if (len > 0) { v[0] /= len; v[1] /= len; v[2] /= len; }
 }
 
-/** 判断轮廓方向（true = 正方向/逆时针） */
+// 判断轮廓绕向（顺时针返回 true），用于侧面决定三角形索引顺序
 function isClockwiseContour(verts: number[], start: number, end: number, dim: number): boolean {
   let sum = 0;
   for (let i = start, prev = end - dim; i < end; i += dim) {
@@ -48,22 +49,28 @@ function isClockwiseContour(verts: number[], start: number, end: number, dim: nu
 
 // ── 顶面三角剖分 ──────────────────────────────────────────────────────────────
 
+/**
+ * 用 earcut 对单个多边形顶面进行三角剖分
+ * UV 坐标归一化到 bboxProj 范围 [0,1]，与内阴影纹理的映射保持一致
+ * 法线通过累加相邻三角形叉积然后归一化，得到平滑法线（用于 MeshStandardMaterial 光照）
+ */
 function buildTopFace(out: GeomData, coords: number[][][], bbox: BboxProj, height: number): void {
   const { vertices, holes, dimensions } = flatten(coords);
   const indices = earcut(vertices, holes, dimensions);
 
-  const bw = bbox[2] - bbox[0];
-  const bh = bbox[3] - bbox[1];
+  const bboxWidth = bbox[2] - bbox[0];
+  const bboxHeight = bbox[3] - bbox[1];
   const vOffset = out.position.length / 3;
 
   for (let i = 0; i < vertices.length; i += dimensions) {
     const x = Math.round(vertices[i]);
     const y = Math.round(vertices[i + 1]);
     out.position.push(x, y, Math.round(height));
-    out.uv.push((x - bbox[0]) / bw, (y - bbox[1]) / bh);
+    out.uv.push((x - bbox[0]) / bboxWidth, (y - bbox[1]) / bboxHeight);
     out.normal.push(0, 0, 0);
   }
 
+  // 累加每个三角面的法线到顶点，最后统一归一化（面积加权平均法线）
   const v1 = [0, 0, 0], v2 = [0, 0, 0], v3 = [0, 0, 0], n = [0, 0, 0];
   for (let i = 2; i < indices.length; i += 3) {
     const i1 = indices[i - 2] + vOffset;
@@ -94,16 +101,21 @@ function buildTopFace(out: GeomData, coords: number[][][], bbox: BboxProj, heigh
 
 // ── 侧面拉伸 ─────────────────────────────────────────────────────────────────
 
+/**
+ * 为多边形每段边构建侧面四边形（上顶点 z=height，下顶点 z=0）
+ * 每个原始顶点生成上下两个顶点：index = 2*j（上）和 2*j+1（下）
+ * UV.x 沿边长累积（用于侧面 ShaderMaterial 渐变），UV.y=1 为上，0 为下
+ * 根据轮廓绕向决定三角形索引顺序，保证法线朝外
+ */
 function buildSideFace(out: GeomData, coords: number[][][], height: number): void {
   const { vertices, holes, dimensions } = flatten(coords);
   const vOffset = out.position.length / 3;
 
-  // 每个原始顶点生成上下两个顶点
   for (let i = 0; i < vertices.length; i += dimensions) {
     const x = Math.round(vertices[i]);
     const y = Math.round(vertices[i + 1]);
-    out.position.push(x, y, Math.round(height)); out.normal.push(0, 0, 0); // 上
-    out.position.push(x, y, 0);                  out.normal.push(0, 0, 0); // 下
+    out.position.push(x, y, Math.round(height)); out.normal.push(0, 0, 0); // 上顶点
+    out.position.push(x, y, 0);                  out.normal.push(0, 0, 0); // 下顶点
   }
 
   const totalVerts = vertices.length / dimensions;
@@ -113,47 +125,49 @@ function buildSideFace(out: GeomData, coords: number[][][], height: number): voi
     contours.push([holes[i], i < holes.length - 1 ? holes[i + 1] : totalVerts]);
   }
 
-  const tmp = [0, 0, 0];
-  for (let ci = 0; ci < contours.length; ci++) {
-    const [cStart, cEnd] = contours[ci];
-    const isOuter = ci === 0;
-    const cw = isOuter === isClockwiseContour(vertices, cStart * dimensions, cEnd * dimensions, dimensions);
+  const edgeVec = [0, 0, 0]; // 当前侧面边的向量，用于计算 UV.x 累积长度
+  for (let contourIdx = 0; contourIdx < contours.length; contourIdx++) {
+    const [contourStart, contourEnd] = contours[contourIdx];
+    const isOuter = contourIdx === 0;
+    // isClockwise 为 true 表示当前轮廓方向与"外轮廓顺时针"一致，按此决定三角形绕向
+    const isClockwise = isOuter === isClockwiseContour(vertices, contourStart * dimensions, contourEnd * dimensions, dimensions);
 
-    let cumLen = 0;
-    if (cw) {
-      for (let j = cStart + 1; j < cEnd; j++) {
-        const qi = (2 * (j - 1) + vOffset) * 3;
-        const qj = (2 * j + vOffset) * 3;
+    let cumulativeLength = 0;
+    if (isClockwise) {
+      for (let j = contourStart + 1; j < contourEnd; j++) {
+        const currPosIdx = (2 * (j - 1) + vOffset) * 3; // 当前顶点（上下各一）在 position 中的起始偏移
+        const nextPosIdx = (2 * j + vOffset) * 3;
 
-        // UV
-        const uvi = (2 * (j - 1) + vOffset) * 2;
-        const uvj = (2 * j + vOffset) * 2;
-        out.uv[uvi] = cumLen; out.uv[uvi + 1] = 1;
-        out.uv[uvi + 2] = cumLen; out.uv[uvi + 3] = 0;
-        vecSub(tmp, [out.position[qj + 3], out.position[qj + 4], out.position[qj + 5]],
-                    [out.position[qi + 3], out.position[qi + 4], out.position[qi + 5]]);
-        cumLen += vecLen(tmp);
-        out.uv[uvj] = cumLen; out.uv[uvj + 1] = 1;
-        out.uv[uvj + 2] = cumLen; out.uv[uvj + 3] = 0;
+        const currUvIdx = (2 * (j - 1) + vOffset) * 2;
+        const nextUvIdx = (2 * j + vOffset) * 2;
+        out.uv[currUvIdx] = cumulativeLength; out.uv[currUvIdx + 1] = 1;
+        out.uv[currUvIdx + 2] = cumulativeLength; out.uv[currUvIdx + 3] = 0;
+        vecSub(edgeVec,
+          [out.position[nextPosIdx + 3], out.position[nextPosIdx + 4], out.position[nextPosIdx + 5]],
+          [out.position[currPosIdx + 3], out.position[currPosIdx + 4], out.position[currPosIdx + 5]]);
+        cumulativeLength += vecLen(edgeVec);
+        out.uv[nextUvIdx] = cumulativeLength; out.uv[nextUvIdx + 1] = 1;
+        out.uv[nextUvIdx + 2] = cumulativeLength; out.uv[nextUvIdx + 3] = 0;
 
         const base = 2 * (j - 1) + vOffset;
         out.index.push(base + 1, base + 3, base);
         out.index.push(base + 3, base + 2, base);
       }
     } else {
-      for (let j = cEnd - 2; j >= cStart; j--) {
-        const qi = (2 * (j + 1) + vOffset) * 3;
-        const qj = (2 * j + vOffset) * 3;
+      for (let j = contourEnd - 2; j >= contourStart; j--) {
+        const currPosIdx = (2 * (j + 1) + vOffset) * 3;
+        const nextPosIdx = (2 * j + vOffset) * 3;
 
-        const uvi = (2 * (j + 1) + vOffset) * 2;
-        const uvj = (2 * j + vOffset) * 2;
-        out.uv[uvi] = cumLen; out.uv[uvi + 1] = 1;
-        out.uv[uvi + 2] = cumLen; out.uv[uvi + 3] = 0;
-        vecSub(tmp, [out.position[qj + 3], out.position[qj + 4], out.position[qj + 5]],
-                    [out.position[qi + 3], out.position[qi + 4], out.position[qi + 5]]);
-        cumLen += vecLen(tmp);
-        out.uv[uvj] = cumLen; out.uv[uvj + 1] = 1;
-        out.uv[uvj + 2] = cumLen; out.uv[uvj + 3] = 0;
+        const currUvIdx = (2 * (j + 1) + vOffset) * 2;
+        const nextUvIdx = (2 * j + vOffset) * 2;
+        out.uv[currUvIdx] = cumulativeLength; out.uv[currUvIdx + 1] = 1;
+        out.uv[currUvIdx + 2] = cumulativeLength; out.uv[currUvIdx + 3] = 0;
+        vecSub(edgeVec,
+          [out.position[nextPosIdx + 3], out.position[nextPosIdx + 4], out.position[nextPosIdx + 5]],
+          [out.position[currPosIdx + 3], out.position[currPosIdx + 4], out.position[currPosIdx + 5]]);
+        cumulativeLength += vecLen(edgeVec);
+        out.uv[nextUvIdx] = cumulativeLength; out.uv[nextUvIdx + 1] = 1;
+        out.uv[nextUvIdx + 2] = cumulativeLength; out.uv[nextUvIdx + 3] = 0;
 
         const base = 2 * (j + 1) + vOffset;
         out.index.push(base + 1, base - 1, base);
@@ -171,15 +185,20 @@ function buildSideFace(out: GeomData, coords: number[][][], height: number): voi
 
 // ── 主函数 ────────────────────────────────────────────────────────────────────
 
+// 将 src 的数据追加到 dst，并记录组信息（groupId, indexLen, vertexCount）
 function mergeInto(dst: GeomGroup, src: GeomData, groupId: number): void {
-  for (const v of src.index) dst.index.push(v);
-  for (const v of src.position) dst.position.push(v);
-  for (const v of src.normal) dst.normal.push(v);
-  for (const v of src.uv) dst.uv.push(v);
+  for (const val of src.index) dst.index.push(val);
+  for (const val of src.position) dst.position.push(val);
+  for (const val of src.normal) dst.normal.push(val);
+  for (const val of src.uv) dst.uv.push(val);
   dst.group.push(groupId, src.index.length, src.position.length / 3);
 }
 
-/** 将 GeoJSON FeatureCollection 转为顶面+侧面几何数据（对应原始 bV） */
+/**
+ * 将 GeoJSON FeatureCollection 三角剖分为顶面+侧面几何数据
+ * 顶面（group[0]）和侧面（group[1]）的缓冲区连续存储，由 MapLayer 根据 group 信息拆分
+ * height=1 配合 mesh.scale.z = baseHeight 在 Three.js 中拉伸到实际高度
+ */
 export function buildGeometry(
   geojson: GeoJSON.FeatureCollection,
   bboxProj: BboxProj
@@ -206,7 +225,7 @@ export function buildGeometry(
   return result;
 }
 
-/** 将 GeomData 转为 Three.js BufferGeometry（对应原始 RV） */
+/** 将 GeomData 转为 Three.js BufferGeometry（同时计算 BoundingSphere 供 Frustum Culling 使用） */
 export function toBufferGeometry(data: GeomData): THREE.BufferGeometry {
   const geo = new THREE.BufferGeometry();
   geo.setIndex(new THREE.BufferAttribute(new Uint32Array(data.index), 1));

@@ -32,6 +32,7 @@ class Renderer {
     this.instance.setPixelRatio(this.sizes.pixelRatio);
   }
 
+  // 每帧由 TimeManager tick 事件驱动调用
   update(): void {
     this.instance.render(this.scene, this.camera.instance);
   }

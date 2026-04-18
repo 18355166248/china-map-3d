@@ -30,13 +30,19 @@ class CameraManager {
     this.bindKeyboard();
   }
 
+  // 切换相机类型时重建 OrbitControls，并将旧 controls dispose 防止内存泄漏
   private setCamera(useOrthographic = this.isOrthographic): void {
     const { width, height } = this.sizes;
     const aspect = width / height;
 
     if (useOrthographic) {
-      const s = 120;
-      this.instance = new THREE.OrthographicCamera(-s * aspect, s * aspect, s, -s, 1, 100000);
+      // halfViewSize 控制正交相机可视范围，与透视相机视野尽量对齐
+      const halfViewSize = 120;
+      this.instance = new THREE.OrthographicCamera(
+        -halfViewSize * aspect, halfViewSize * aspect,
+        halfViewSize, -halfViewSize,
+        1, 100000
+      );
     } else {
       this.instance = new THREE.PerspectiveCamera(45, aspect, 1, 100000);
     }
@@ -51,6 +57,10 @@ class CameraManager {
     this.controls.dampingFactor = 0.05;
   }
 
+  /**
+   * 接收 computeKV 输出的相机状态并应用
+   * near/far 必须在 updateProjectionMatrix 前设置，否则不生效
+   */
   applyStatus(status: CameraStatus): void {
     this.instance.near = status.near;
     this.instance.far = status.far;
@@ -61,16 +71,17 @@ class CameraManager {
     this.controls.update();
   }
 
+  // O 键切正交，P 键切透视，切换后保持 position 不变（仅改投影方式）
   private bindKeyboard(): void {
     document.addEventListener('keydown', (e) => {
-      const pos = this.instance.position.clone();
+      const currentPosition = this.instance.position.clone();
       if (e.key === 'o' || e.key === 'O') {
         this.setCamera(true);
-        this.instance.position.copy(pos);
+        this.instance.position.copy(currentPosition);
         this.instance.updateProjectionMatrix();
       } else if (e.key === 'p' || e.key === 'P') {
         this.setCamera(false);
-        this.instance.position.copy(pos);
+        this.instance.position.copy(currentPosition);
         this.instance.updateProjectionMatrix();
       }
     });
@@ -80,11 +91,11 @@ class CameraManager {
     const { width, height } = this.sizes;
     const aspect = width / height;
     if (this.instance instanceof THREE.OrthographicCamera) {
-      const s = 120;
-      this.instance.left = -s * aspect;
-      this.instance.right = s * aspect;
-      this.instance.top = s;
-      this.instance.bottom = -s;
+      const halfViewSize = 120;
+      this.instance.left = -halfViewSize * aspect;
+      this.instance.right = halfViewSize * aspect;
+      this.instance.top = halfViewSize;
+      this.instance.bottom = -halfViewSize;
     } else {
       this.instance.aspect = aspect;
     }
@@ -92,6 +103,7 @@ class CameraManager {
   }
 
   update(): void {
+    // enableDamping 开启时必须每帧调用，否则阻尼效果不生效
     this.controls.update();
   }
 

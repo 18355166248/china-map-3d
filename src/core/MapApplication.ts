@@ -5,6 +5,15 @@ import SizeManager from './SizeManager';
 import CameraManager from './CameraManager';
 import Renderer from './Renderer';
 
+/**
+ * 场景基类，组合各管理器并建立事件驱动的渲染循环
+ * 业务层（MapLayer 等）继承此类，专注于 Mesh 管理
+ *
+ * 渲染循环：
+ *   TimeManager.tick → CameraManager.update（阻尼）→ Renderer.update（渲染）
+ * 窗口变化：
+ *   SizeManager.resize → CameraManager.resize → Renderer.resize
+ */
 class MapApplication extends EventEmitter {
   scene: THREE.Scene;
   camera: CameraManager;
@@ -33,6 +42,7 @@ class MapApplication extends EventEmitter {
   }
 
   destroy(): void {
+    // 遍历场景销毁所有 Mesh 资源，防止 GPU 显存泄漏
     this.scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         obj.geometry?.dispose();
