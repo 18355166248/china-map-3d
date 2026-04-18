@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { projectGeoJSON } from './geo/transform';
 import { computeKV } from './geo/camera';
-import { loadPbf } from './geo/loader';
+import { loadGeoJSON } from './geo/loader';
 import { buildGeometry } from './geo/triangulate';
 import { MapLayer } from './map/MapLayer';
 import * as turf from '@turf/turf';
@@ -16,7 +16,7 @@ export default function App() {
     let cancelled = false;
 
     (async () => {
-      const raw = await loadPbf('/data/districtaggregate_province_kld_gc.pbf');
+      const raw = await loadGeoJSON('/json/china.json');
       if (cancelled) return;
 
       const projected = projectGeoJSON(raw) as GeoJSON.FeatureCollection;

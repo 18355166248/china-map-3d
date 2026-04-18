@@ -96,6 +96,7 @@ export class MapLayer extends MapApplication {
       },
     });
     this.sideMesh = new THREE.Mesh(sideGeo, sideMat);
+    this.sideMesh.scale.z = baseHeight;
     this.sideMesh.castShadow = true;
     this.sideMesh.name = 'map-side';
 
