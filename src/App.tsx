@@ -33,6 +33,9 @@ export default function App() {
 
       // 内阴影在 buildMeshes 之后应用，需要 innerShadowMesh 已存在
       layer.applyInnerShadow(projected, kv.bboxOption, { debug: false });
+
+      // 省级边界线（顶面 + 底面）
+      layer.addBoundary(projected, kv.bboxOption, { color: '#4fc3f7', linewidth: 1, opacity: 0.9 });
     })();
 
     return () => {

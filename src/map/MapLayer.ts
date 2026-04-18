@@ -1,9 +1,12 @@
 import * as THREE from 'three';
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import MapApplication from '../core/MapApplication';
 import type { BboxOption } from '../geo/camera';
 import type { GeomData } from '../geo/triangulate';
 import { toBufferGeometry } from '../geo/triangulate';
 import { buildInnerShadowTexture, type InnerShadowStyle } from './innerShadow';
+import { buildBoundaryLines, updateBoundaryResolution, type BoundaryStyle, type BoundaryLines } from './boundary';
 
 // 侧面顶点着色器：透传 uv，用于片元着色器做顶底渐变
 const SIDE_VERT = /* glsl */`
@@ -34,6 +37,9 @@ export class MapLayer extends MapApplication {
   private sideMesh?: THREE.Mesh;
   innerShadowMesh?: THREE.Mesh;
 
+  // 边界线对象，resize 时需要更新 LineMaterial.resolution
+  private boundaryLines?: BoundaryLines;
+
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
 
@@ -42,6 +48,13 @@ export class MapLayer extends MapApplication {
     const dir = new THREE.DirectionalLight(0xffffff, 1.0);
     dir.position.set(0, 0, 1).normalize();
     this.scene.add(ambient, dir);
+
+    // resize 时更新边界线分辨率，LineMaterial 依赖此值计算像素线宽
+    this.sizes.on('resize', () => {
+      if (this.boundaryLines) {
+        updateBoundaryResolution(this.boundaryLines, this.sizes.width, this.sizes.height);
+      }
+    });
   }
 
   buildMeshes(
@@ -126,6 +139,31 @@ export class MapLayer extends MapApplication {
     mat.needsUpdate = true;
   }
 
+  /**
+   * 添加省级边界线（顶面 + 底面各一套）
+   * 重复调用会先清除上一次的边界线
+   */
+  addBoundary(
+    geojson: GeoJSON.FeatureCollection,
+    bboxOption: BboxOption,
+    style?: BoundaryStyle
+  ): void {
+    this.clearBoundary();
+    this.boundaryLines = buildBoundaryLines(geojson, bboxOption, this.sizes, style);
+    this.scene.add(this.boundaryLines.top, this.boundaryLines.bottom);
+  }
+
+  // 销毁边界线几何和材质资源
+  clearBoundary(): void {
+    if (!this.boundaryLines) return;
+    [this.boundaryLines.top, this.boundaryLines.bottom].forEach((line: LineSegments2) => {
+      this.scene.remove(line);
+      line.geometry.dispose();
+      (line.material as LineMaterial).dispose();
+    });
+    this.boundaryLines = undefined;
+  }
+
   // 销毁所有 Mesh 及其材质/几何资源，buildMeshes 前调用保证无重复对象
   clearMeshes(): void {
     [this.topMesh, this.innerShadowMesh, this.sideMesh].forEach(mesh => {
@@ -141,5 +179,10 @@ export class MapLayer extends MapApplication {
     this.topMesh = undefined;
     this.innerShadowMesh = undefined;
     this.sideMesh = undefined;
+  }
+
+  destroy(): void {
+    this.clearBoundary();
+    super.destroy();
   }
 }

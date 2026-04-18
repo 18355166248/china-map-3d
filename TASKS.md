@@ -51,26 +51,26 @@
 
 ---
 
-## Step 5 — 内阴影 `[ ]`
+## Step 5 — 内阴影 `[x]`
 
 > 参考 `zV.js`，Canvas 2D source-out 合成
 
-- [ ] `buildInnerShadowTexture(geojson, bboxOption, style)` → Canvas → THREE.Texture
-- [ ] 每个 feature 单独绘制，按 feature bbox 缩放 shadowBlur
-- [ ] 贴到 innerShadowMesh，`scale.z = 1.01 * baseHeight`
-- [ ] 配置项：shadowColor / shadowBlurScale / fillColor
+- [x] `buildInnerShadowTexture(geojson, bboxOption, style)` → Canvas → THREE.Texture
+- [x] 每个 feature 单独绘制，按 feature bbox 缩放 shadowBlur
+- [x] 贴到 innerShadowMesh，`scale.z = 1.01 * baseHeight`
+- [x] 配置项：shadowColor / shadowBlurScale / fillColor
 
 **方案**：在 `src/map/innerShadow.ts` 实现，`MapLayer.applyInnerShadow(geojson, bboxOption, style)` 调用。
 
-## Step 6 — 边界线 `[ ]`
+## Step 6 — 边界线 `[x]`
 
 > 参考 `HV.js`，Line2 系列
 
-- [ ] 安装/引入 `Line2 / LineMaterial / LineSegmentsGeometry`（three/examples/jsm/lines）
-- [ ] `buildBoundaryLines(geojson, bboxOption)` → Line2 对象
-- [ ] 省级边界线（districtStrokeGroup）
-- [ ] 底部边界线（districtBottomStrokeGroup，z=0 处）
-- [ ] `material.resolution.set(width, height)` 随 resize 更新
+- [x] 安装/引入 `Line2 / LineMaterial / LineSegmentsGeometry`（three/examples/jsm/lines）
+- [x] `buildBoundaryLines(geojson, bboxOption)` → Line2 对象
+- [x] 省级边界线（districtStrokeGroup）
+- [x] 底部边界线（districtBottomStrokeGroup，z=0 处）
+- [x] `material.resolution.set(width, height)` 随 resize 更新
 
 **方案**：`src/map/boundary.ts`，MapLayer 暴露 `addBoundary(geojson, style)` 方法。
 
