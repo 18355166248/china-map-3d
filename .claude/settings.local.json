@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"^\\(sm|KV|zV|bv|eW|HV|oV|IW|upperZV|OV_map\\)\\\\.js$\")",
+      "Bash(grep -n 'const $w\\\\|var $w\\\\|$w =' F:/FrontEnd/Code/datawind-chinaMap/bi/datawind/aeolus/embed/statics/assets/chunk/index.6dcce8bc.js)",
+      "Bash(node -e \"const e = require\\('./node_modules/earcut/src/earcut.js'\\); console.log\\(typeof e, typeof e.flatten\\)\")",
+      "Bash(node -e \"const g = require\\('./node_modules/geobuf/index.js'\\); console.log\\(Object.keys\\(g\\)\\)\")",
+      "Bash(node -e \"const p = require\\('./node_modules/pbf/index.js'\\); console.log\\(typeof p\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(node -e \"import\\('earcut'\\).then\\(m => console.log\\(Object.keys\\(m\\)\\)\\)\")",
+      "Read(//f/FrontEnd/Code/3DMap-zhejiang/packages/threejs-demo/src/examples/**)"
+    ]
+  }
+}

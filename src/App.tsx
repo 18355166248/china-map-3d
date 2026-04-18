@@ -1,121 +1,39 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useRef } from 'react';
+import { projectGeoJSON } from './geo/transform';
+import { computeKV } from './geo/camera';
+import { loadPbf } from './geo/loader';
+import { buildGeometry } from './geo/triangulate';
+import { MapLayer } from './map/MapLayer';
+import * as turf from '@turf/turf';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+  useEffect(() => {
+    const canvas = canvasRef.current!;
+    const layer = new MapLayer(canvas);
+    let cancelled = false;
 
-      <div className="ticks"></div>
+    (async () => {
+      const raw = await loadPbf('/data/districtaggregate_province_kld_gc.pbf');
+      if (cancelled) return;
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      const projected = projectGeoJSON(raw) as GeoJSON.FeatureCollection;
+      const bboxProj = turf.bbox(projected) as [number, number, number, number];
+      const kv = computeKV({ geojsonProj: projected, pitch: 40, rotation: 4 });
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      layer.camera.applyStatus(kv.cameraStatus);
+
+      const geomGroup = buildGeometry(projected, bboxProj);
+      layer.buildMeshes(geomGroup, kv.bboxOption);
+    })();
+
+    return () => {
+      cancelled = true;
+      layer.destroy();
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} style={{ width: '100vw', height: '100vh', display: 'block' }} />;
 }
-
-export default App

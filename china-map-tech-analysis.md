@@ -1,5 +1,7 @@
 # 中国3D地图技术实现文档
 
+逆向本地地址: F:\FrontEnd\Code\datawind-chinaMap
+
 > 逆向分析 `bi/datawind-open/embed/20072143/vScreen/10004170/index.html` 入口的地图渲染引擎，
 > 整理坐标系统、内阴影、边缘线流光等核心技术点，供从0到1自行实现参考。
 
@@ -27,6 +29,7 @@ IW (GIS引擎主类)
 ```
 
 默认视口参数（`uk`）：
+
 - zoom: 3.75，center: [104.299, 33.518]（中国地理中心）
 - pitch: 40°，rotation: 4°
 
@@ -36,10 +39,10 @@ IW (GIS引擎主类)
 
 ### 2.1 三层坐标
 
-| 层级 | 说明 | 处理函数 |
-|------|------|---------|
-| 地理坐标 | 经纬度 [lon, lat] | 原始 GeoJSON |
-| 投影坐标 | Mercator 平面坐标 | `window.sm()` |
+| 层级     | 说明              | 处理函数                    |
+| -------- | ----------------- | --------------------------- |
+| 地理坐标 | 经纬度 [lon, lat] | 原始 GeoJSON                |
+| 投影坐标 | Mercator 平面坐标 | `window.sm()`               |
 | 世界坐标 | Three.js 场景坐标 | `window.wV(lon, lat, zoom)` |
 
 ### 2.2 投影流程
@@ -57,6 +60,7 @@ GeoJSON (经纬度)
 
 `window.KV(options)` 输入：geojson、pitch、rotation、offset、viewClip
 输出：
+
 - `bboxOption`：投影中心、宽高、bboxSize、bboxScale、baseHeight
 - `cameraStatus`：near/far/target/position/up
 - `layerFitValue`：xy缩放、z缩放、飞线宽度、直线宽度
@@ -73,6 +77,7 @@ bottom-right / bottom / top / left / right
 ### 3.1 数据格式
 
 项目使用 **GeoBuf/PBF** 格式（比 GeoJSON 体积小 6-8 倍），主要数据文件：
+
 - `countryborder_208_gc.pbf` — 国界
 - `district_100000_1_gc.pbf` — 省/市/县区划
 - `districtaggregate_province/city/county_kld_gc.pbf` — 三级聚合数据
@@ -92,6 +97,7 @@ bottom-right / bottom / top / left / right
 ### 3.3 三角剖分（bv.js → bV）
 
 `window.bV(geoJsonData, bboxProj)` 将 GeoJSON 转为 Three.js 可用的几何数据：
+
 - `window._l.flatten` 扁平化坐标
 - `window._l.default` 三角剖分（earcut 算法）
 - 计算 UV（基于 bbox 归一化到 [0,1]）
@@ -113,7 +119,7 @@ topMesh.name = "map-top";
 
 // 内阴影层（叠在顶面上方）
 const shadowMesh = new THREE.Mesh(geo, extrudeInnerShadowMaterial);
-shadowMesh.scale.z = 1.01 * baseHeight;  // 略高于顶面，避免 z-fighting
+shadowMesh.scale.z = 1.01 * baseHeight; // 略高于顶面，避免 z-fighting
 shadowMesh.name = "map-innerShadow";
 
 // 侧面 (case 1)
@@ -124,11 +130,11 @@ sideMesh.userData.invertedRelection = true;
 
 ### 4.2 材质类型
 
-| 部位 | 材质类型 | 特点 |
-|------|---------|------|
-| 顶面 | MeshStandardMaterial | 支持法线贴图、自发光贴图 |
-| 侧面 | ShaderMaterial | 顶底渐变色（uniform 传入顶色/底色） |
-| 内阴影 | MeshBasicMaterial | 贴 Canvas 生成的阴影纹理，transparent: true |
+| 部位   | 材质类型             | 特点                                        |
+| ------ | -------------------- | ------------------------------------------- |
+| 顶面   | MeshStandardMaterial | 支持法线贴图、自发光贴图                    |
+| 侧面   | ShaderMaterial       | 顶底渐变色（uniform 传入顶色/底色）         |
+| 内阴影 | MeshBasicMaterial    | 贴 Canvas 生成的阴影纹理，transparent: true |
 
 ### 4.3 背景拉伸
 
@@ -147,10 +153,10 @@ sideMesh.userData.invertedRelection = true;
 
 ```js
 // 1. 创建 Canvas，尺寸对应 bbox 范围
-const canvas = document.createElement('canvas');
+const canvas = document.createElement("canvas");
 canvas.width = bboxPixelWidth;
 canvas.height = bboxPixelHeight;
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext("2d");
 
 // 2. 绘制区域路径（地理坐标 → 画布坐标）
 ctx.beginPath();
@@ -165,11 +171,11 @@ coordinates.forEach((ring) => {
 });
 
 // 3. 先填充区域（作为 source）
-ctx.fillStyle = 'white';
+ctx.fillStyle = "white";
 ctx.fill();
 
 // 4. source-out 模式：在 source 区域之外绘制阴影
-ctx.globalCompositeOperation = 'source-out';
+ctx.globalCompositeOperation = "source-out";
 ctx.shadowBlur = styleConfig.shadowBlur;
 ctx.shadowColor = styleConfig.shadowColor;
 ctx.fillStyle = styleConfig.fillColor;
@@ -187,10 +193,10 @@ mapInstance.extrudeInnerShadowMaterial.needsUpdate = true;
 ```js
 districtStyle.innerShadow = {
   enabled: true,
-  shadowColor: 'rgba(0,0,0,0.8)',
+  shadowColor: "rgba(0,0,0,0.8)",
   shadowBlur: 20,
-  fillColor: 'rgba(0,0,0,0)'
-}
+  fillColor: "rgba(0,0,0,0)",
+};
 ```
 
 ---
@@ -228,6 +234,7 @@ void main() {
 ```
 
 uniforms：
+
 ```js
 uniforms: {
   dashOffset: { value: 0 },
@@ -273,9 +280,9 @@ function animate() {
 原生 WebGL 的 `gl.lineWidth` 在大多数平台上最大只支持 1px，Three.js 的 `Line2` 扩展通过将线段转为四边形（billboard quad）实现任意宽度。
 
 ```js
-import { Line2 } from 'three/examples/jsm/lines/Line2.js';
-import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry.js";
 
 // 构建坐标数组（每两点一段）
 const positions = [];
@@ -287,7 +294,7 @@ geometry.setPositions(positions);
 const material = new LineMaterial({
   color: 0x00ffff,
   opacity: 0.8,
-  linewidth: 2,        // 单位：像素
+  linewidth: 2, // 单位：像素
   transparent: true,
   dashed: false,
 });
@@ -319,12 +326,16 @@ async function loadTileTexture(urlTemplate, bbox, zoom) {
 
   // 2. 并行 fetch 所有瓦片
   const images = await Promise.all(
-    tiles.map(({ x, y, z }) => loadImage(urlTemplate.replace('{x}', x).replace('{y}', y).replace('{z}', z)))
+    tiles.map(({ x, y, z }) =>
+      loadImage(
+        urlTemplate.replace("{x}", x).replace("{y}", y).replace("{z}", z),
+      ),
+    ),
   );
 
   // 3. 拼接到 Canvas
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
   tiles.forEach(({ x, y }, i) => {
     ctx.drawImage(images[i], (x - minX) * 256, (y - minY) * 256);
   });
@@ -339,6 +350,7 @@ async function loadTileTexture(urlTemplate, bbox, zoom) {
 ```
 
 支持三种纹理类型：
+
 - `map` — 颜色贴图
 - `normalMap` — 法线贴图（山峰凹凸效果）
 - `emissiveMap` — 自发光贴图（夜间发光效果）
@@ -352,9 +364,9 @@ async function loadTileTexture(urlTemplate, bbox, zoom) {
 ```js
 class MapLayer {
   constructor() {
-    this.drillStack = [];       // 钻取历史栈
-    this.currentCode = '100000'; // 当前行政区划代码
-    this.currentLevel = 'province'; // province / city / county
+    this.drillStack = []; // 钻取历史栈
+    this.currentCode = "100000"; // 当前行政区划代码
+    this.currentLevel = "province"; // province / city / county
   }
 
   async drillDown(code) {
@@ -378,17 +390,19 @@ class MapLayer {
 
 ```js
 const PBF_URLS = {
-  province: 'districtaggregate_province_kld_gc.pbf',
-  city:     'districtaggregate_city_kld_gc.pbf',
-  county:   'districtaggregate_county_kld_gc.pbf',
+  province: "districtaggregate_province_kld_gc.pbf",
+  city: "districtaggregate_city_kld_gc.pbf",
+  county: "districtaggregate_county_kld_gc.pbf",
 };
 
 async function loadAndRender(code) {
   const url = PBF_URLS[this.currentLevel];
-  const buffer = await fetch(url).then(r => r.arrayBuffer());
+  const buffer = await fetch(url).then((r) => r.arrayBuffer());
   const geojson = geobuf.decode(new Pbf(buffer));
   // 过滤出当前 code 下的子区域
-  const features = geojson.features.filter(f => f.properties.parentCode === code);
+  const features = geojson.features.filter(
+    (f) => f.properties.parentCode === code,
+  );
   // 重新走投影 → 三角剖分 → 渲染流程
   this.render(features);
 }
@@ -426,17 +440,70 @@ async function loadAndRender(code) {
 
 ## 关键文件索引
 
-| 文件 | 功能 |
-|------|------|
-| `chunk/IW.js` | GIS 引擎主类，初始化顺序 |
-| `chunk/eW.js` | 地图图层主类，initExtrude、handleAnimation |
-| `chunk/oV.js` | 图层基类，数据流水线 |
-| `chunk/KV.js` | 相机/BBox 计算 |
-| `chunk/zV.js` | 内阴影 Canvas 生成 |
-| `chunk/sm.js` | GeoJSON 坐标变换 |
-| `chunk/bv.js` | 三角剖分工具函数 |
-| `chunk/HV.js` | 子区域边界线渲染 |
-| `chunk/upperZV.js` | 数据加载与投影处理 |
-| `chunk/OV_map.js` | 纹理加载（单图/瓦片） |
-| `chunk/index.6dcce8bc.js:64802` | 流光 ShaderMaterial（LV 类） |
-| `chunk/index.6dcce8bc.js:65293` | 流光图层管理（NV 类） |
+| 文件                            | 功能                                       |
+| ------------------------------- | ------------------------------------------ |
+| `chunk/IW.js`                   | GIS 引擎主类，初始化顺序                   |
+| `chunk/eW.js`                   | 地图图层主类，initExtrude、handleAnimation |
+| `chunk/oV.js`                   | 图层基类，数据流水线                       |
+| `chunk/KV.js`                   | 相机/BBox 计算                             |
+| `chunk/zV.js`                   | 内阴影 Canvas 生成                         |
+| `chunk/sm.js`                   | GeoJSON 坐标变换                           |
+| `chunk/bv.js`                   | 三角剖分工具函数                           |
+| `chunk/HV.js`                   | 子区域边界线渲染                           |
+| `chunk/upperZV.js`              | 数据加载与投影处理                         |
+| `chunk/OV_map.js`               | 纹理加载（单图/瓦片）                      |
+| `chunk/index.6dcce8bc.js:64802` | 流光 ShaderMaterial（LV 类）               |
+| `chunk/index.6dcce8bc.js:65293` | 流光图层管理（NV 类）                      |
+
+---
+
+## 十一、Three.js 封装架构（MapApplication 层）
+
+> 参考 `3DMap-zhejiang/packages/threejs-demo/src/examples/ShuZiXS/MapControl` 架构实现。
+
+### 11.1 核心管理器
+
+| 类 | 文件 | 职责 |
+|----|------|------|
+| `EventEmitter` | `src/core/EventEmitter.ts` | 发布订阅基类，`Map<string, Set<Function>>` |
+| `TimeManager` | `src/core/TimeManager.ts` | rAF 驱动，`emit('tick', deltaTime, elapsedTime)` |
+| `SizeManager` | `src/core/SizeManager.ts` | canvas 尺寸管理，`emit('resize')`，基于 canvas.clientWidth/Height |
+| `CameraManager` | `src/core/CameraManager.ts` | 透视/正交相机 + OrbitControls，`applyStatus()` 接收 computeKV 输出 |
+| `Renderer` | `src/core/Renderer.ts` | WebGLRenderer 封装，预留 EffectComposer 接口 |
+| `MapApplication` | `src/core/MapApplication.ts` | 组合基类，业务层继承，事件驱动渲染循环 |
+
+### 11.2 事件驱动渲染循环
+
+```
+TimeManager.tick() → emit('tick', dt, elapsed)
+  → CameraManager.update()    (OrbitControls.update + damping)
+  → Renderer.update()         (renderer.render)
+  → 各特效模块帧更新（流光 dashOffset、粒子等，通过 time.on('tick') 订阅）
+
+SizeManager → emit('resize')
+  → CameraManager.resize()    (更新 aspect / frustum)
+  → Renderer.resize()         (setSize + setPixelRatio)
+```
+
+### 11.3 与 geo/ 层的接口
+
+```
+computeKV(opts) → { bboxOption, cameraStatus, layerFitValue }
+  ↓
+CameraManager.applyStatus(cameraStatus)   // near/far/position/up/target
+MapLayer.buildMeshes(geomGroup, bboxOption)
+  // bboxOption.baseHeight → mesh.scale.z
+  // bboxOption.bboxProj   → UV 归一化范围
+```
+
+### 11.4 与参考项目的关键差异
+
+| 项目 | 参考项目（zhejiang） | 本项目 |
+|------|---------------------|--------|
+| 投影方式 | d3-geo（scale=120） | 自实现 Mercator（与原始 wV 一致） |
+| 数据格式 | GeoJSON 字符串 | PBF 解码 → GeoJSON |
+| 三角剖分 | THREE.ExtrudeGeometry | earcut 自定义（顶面+侧面分离） |
+| SizeManager | window.innerWidth/Height | canvas.clientWidth/Height（支持嵌入） |
+| 交互系统 | three.interactive 库 | 原生 Raycaster（Step 9 实现） |
+| 相机初始化 | 手动设置 position | computeKV 计算 CameraStatus |
+
