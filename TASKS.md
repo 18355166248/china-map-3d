@@ -106,6 +106,46 @@
 
 ---
 
+## Step 10 — 已知问题修复 `[ ]`
+
+- [ ] OrbitControls minDistance / maxDistance 根据 bboxSize 动态设置，防止缩放过近/过远
+- [ ] 侧面 UV 末尾闭合段处理（最后一段回到起点的 UV 可能缺失）
+- [ ] MultiPolygon 特征侧面法线方向验证
+
+**方案**：`CameraManager.applyStatus` 中设置 minDistance/maxDistance；`triangulate.ts` 修复侧面 UV。
+
+## Step 11 — 县级钻取 `[ ]`
+
+> 在城市级基础上再往下一层，支持点击城市进入县级视图
+
+- [ ] 下载所有城市的县级 GeoJSON（`{cityAdcode}_full.json`）
+- [ ] DrillController 支持三级栈（省 → 市 → 县）
+- [ ] 县级 minLength 阈值调整
+
+**方案**：扩展 `scripts/download-provinces.mjs` 下载县级数据；DrillController 逻辑复用，无需大改。
+
+## Step 12 — 省份 Hover 高亮 `[ ]`
+
+> 鼠标悬停时高亮对应省份，提升交互反馈
+
+- [ ] mousemove 事件 + Raycaster hitTest 找到当前 hover feature
+- [ ] 高亮 Mesh：复用 topMesh 几何，叠加一层半透明高亮色
+- [ ] 鼠标移出时恢复
+
+**方案**：`src/map/highlight.ts` 实现 HighlightController，MapLayer 暴露 `setHighlight(feature)` 方法。
+
+## Step 13 — 标注、飞线、粒子 `[ ]`
+
+> 在地图上叠加文字标注、城市间飞线、粒子特效
+
+- [ ] 省/市名称标注（CSS2DRenderer 或 Sprite）
+- [ ] 飞线（QuadraticBezierCurve3 + 动画 dashOffset）
+- [ ] 粒子特效（Points + ShaderMaterial）
+
+**方案**：各自独立模块，MapLayer 暴露对应 add/clear 方法。
+
+---
+
 ## 数据文件（public/data/）`[x]`
 
 | 文件 | 用途 |
