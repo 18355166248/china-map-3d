@@ -135,11 +135,11 @@ export class FlylineController {
       const length = arcLength(positions);
       if (length <= 0) continue;
 
-      // ── 轨迹底线（全弧，极淡）──────────────────────────────
+      // ── 轨迹底线（全弧）──────────────────────────────
       const trailMat = new LineMaterial({
         color: hex,
-        linewidth: 1,
-        opacity: 0.08,
+        linewidth: 1.5,
+        opacity: 0.45,
         transparent: true,
         depthWrite: false,
       });
