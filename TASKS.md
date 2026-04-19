@@ -74,7 +74,7 @@
 
 **方案**：`src/map/boundary.ts`，MapLayer 暴露 `addBoundary(geojson, style)` 方法。
 
-## Step 7 — 流光动画 `[ ]`
+## Step 7 — 流光动画 `[x]`
 
 > 参考 `index.6dcce8bc.js:64802` LV 类
 

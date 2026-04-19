@@ -27,7 +27,7 @@ export function buildInnerShadowTexture(
   style: InnerShadowStyle = {},
 ): THREE.Texture {
   const {
-    shadowColor = "rgba(255,0,0,1)",
+    shadowColor = "rgba(255,255,255,1)",
     shadowBlur = 50,
     resolution = 2000,
     debug = false,
