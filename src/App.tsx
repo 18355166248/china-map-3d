@@ -18,7 +18,7 @@ export default function App() {
 
     (async () => {
       // 数据管线：加载 GeoJSON → Mercator 投影 → 计算相机/bbox → 三角剖分 → 构建 Mesh
-      const raw = await loadGeoJSON('/json/china.json');
+      const raw = await loadGeoJSON('/json/china-province.json');
       if (cancelled) return;
 
       // projected 坐标系与 Three.js 场景坐标系一致（Mercator 平面坐标）

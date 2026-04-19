@@ -83,13 +83,13 @@
 
 **方案**：`src/map/streamer.ts` 实现 StreamerMaterial，在 MapLayer 构造时注册 tick 监听。
 
-## Step 8 — 纹理贴图 `[ ]`
+## Step 8 — 纹理贴图 `[x]`
 
 > 参考 `OV_map.js`
 
-- [ ] 单图片纹理（TextureLoader）→ topMesh material.map
+- [x] 单图片纹理（TextureLoader）→ topMesh material.map
 - [ ] 瓦片拼接纹理（getTilesInBbox → 并行 fetch → Canvas 拼接）
-- [ ] 支持 map / normalMap / emissiveMap
+- [x] 支持 map / normalMap / emissiveMap
 
 **方案**：`src/map/texture.ts`，MapLayer 暴露 `setTexture(type, url|tileTemplate)` 方法。
 
