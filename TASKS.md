@@ -122,21 +122,19 @@
 
 **方案**：`scripts/download-counties.mjs` 批量下载；DrillController 用 `stack.length` 判断层级，depth≥3 禁止继续钻取。
 
-## Step 12 — 省份 Hover 高亮 `[ ]`
+## Step 12 — 省份 Hover 高亮 `[x]`
 
-> 鼠标悬停时高亮对应省份，提升交互反馈
+- [x] mousemove 事件 + Raycaster hitTest 找到当前 hover feature
+- [x] 高亮 Mesh：单 feature 三角剖分，叠加半透明白色高亮
+- [x] 鼠标移出时恢复，cursor 切换为 pointer
 
-- [ ] mousemove 事件 + Raycaster hitTest 找到当前 hover feature
-- [ ] 高亮 Mesh：复用 topMesh 几何，叠加一层半透明高亮色
-- [ ] 鼠标移出时恢复
+**方案**：`src/map/highlight.ts` HighlightController，按需构建高亮 Mesh。
 
-**方案**：`src/map/highlight.ts` 实现 HighlightController，MapLayer 暴露 `setHighlight(feature)` 方法。
-
-## Step 13 — 标注、飞线、粒子 `[ ]`
+## Step 13 — 标注、飞线、粒子 `[~]`
 
 > 在地图上叠加文字标注、城市间飞线、粒子特效
 
-- [ ] 省/市名称标注（CSS2DRenderer 或 Sprite）
+- [x] 省/市/县名称标注（CSS2DRenderer）
 - [ ] 飞线（QuadraticBezierCurve3 + 动画 dashOffset）
 - [ ] 粒子特效（Points + ShaderMaterial）
 

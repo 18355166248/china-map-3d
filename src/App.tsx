@@ -7,6 +7,7 @@ import { MapLayer } from "./map/MapLayer";
 import { DrillController } from "./map/drill";
 import { LabelController } from "./map/label";
 import { HighlightController } from "./map/highlight";
+import { FlylineController } from "./map/flyline";
 import * as turf from "@turf/turf";
 import "./App.css";
 
@@ -21,6 +22,7 @@ export default function App() {
     let drill: DrillController | null = null;
     let labels: LabelController | null = null;
     let highlight: HighlightController | null = null;
+    let flylines: FlylineController | null = null;
 
     (async () => {
       // 数据管线：加载 GeoJSON → Mercator 投影 → 计算相机/bbox → 三角剖分 → 构建 Mesh
@@ -68,6 +70,19 @@ export default function App() {
       // 纹理贴图
       await layer.setTexture("map", "/textures/wenli.jpg");
 
+      // 飞线示例（北京→上海→广州→成都→北京）
+      flylines = new FlylineController(layer);
+      flylines.setData(
+        [
+          { from: [116.4, 39.9], to: [121.47, 31.23] },
+          { from: [121.47, 31.23], to: [113.26, 23.13] },
+          { from: [113.26, 23.13], to: [104.07, 30.67] },
+          { from: [104.07, 30.67], to: [116.4, 39.9] },
+        ],
+        kv.bboxOption,
+        { color: "#ff6b35", linewidth: 1.5, speed: 0.6 },
+      );
+
       // 钻取交互：双击省份飞入城市级，右键退回
       drill = new DrillController(layer);
       labels = new LabelController(layer.scene);
@@ -87,6 +102,7 @@ export default function App() {
       drill?.dispose();
       labels?.dispose();
       highlight?.dispose();
+      flylines?.dispose();
       layer.destroy();
     };
   }, []);
