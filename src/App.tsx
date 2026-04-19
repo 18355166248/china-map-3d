@@ -36,6 +36,19 @@ export default function App() {
 
       // 省级边界线（顶面 + 底面）
       layer.addBoundary(projected, kv.bboxOption, { color: '#4fc3f7', linewidth: 1, opacity: 0.9 });
+
+      // 流光动画：flatten 拍平 MultiPolygon → dissolve 合并为整体外轮廓 → 一个亮点沿边界转动
+      // dissolve 只接受 Polygon，需先用 flatten 把 MultiPolygon 拆成独立 Polygon
+      const flattened = turf.flatten(projected);
+      const withGroup = {
+        ...flattened,
+        features: flattened.features.map(f => ({
+          ...f,
+          properties: { ...f.properties, _group: 'china' }
+        }))
+      } as GeoJSON.FeatureCollection<GeoJSON.Polygon>;
+      const dissolved = turf.dissolve(withGroup, { propertyName: '_group' });
+      layer.addStreamer(dissolved, kv.bboxOption, { color: '#00ffff', linewidth: 2, speed: 0.3, minLength: 2000 });
     })();
 
     return () => {

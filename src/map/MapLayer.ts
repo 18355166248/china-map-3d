@@ -7,6 +7,7 @@ import type { GeomData } from '../geo/triangulate';
 import { toBufferGeometry } from '../geo/triangulate';
 import { buildInnerShadowTexture, type InnerShadowStyle } from './innerShadow';
 import { buildBoundaryLines, updateBoundaryResolution, type BoundaryStyle, type BoundaryLines } from './boundary';
+import { buildStreamerLines, updateStreamerResolution, type StreamerStyle, type StreamerLines } from './streamer';
 
 // 侧面顶点着色器：透传 uv，用于片元着色器做顶底渐变
 const SIDE_VERT = /* glsl */`
@@ -40,6 +41,9 @@ export class MapLayer extends MapApplication {
   // 边界线对象，resize 时需要更新 LineMaterial.resolution
   private boundaryLines?: BoundaryLines;
 
+  // 流光线对象，tick 事件驱动 dashOffset 动画
+  private streamerLines?: StreamerLines;
+
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
 
@@ -49,10 +53,13 @@ export class MapLayer extends MapApplication {
     dir.position.set(0, 0, 1).normalize();
     this.scene.add(ambient, dir);
 
-    // resize 时更新边界线分辨率，LineMaterial 依赖此值计算像素线宽
+    // resize 时更新边界线和流光线分辨率，LineMaterial 依赖此值计算像素线宽
     this.sizes.on('resize', () => {
       if (this.boundaryLines) {
         updateBoundaryResolution(this.boundaryLines, this.sizes.width, this.sizes.height);
+      }
+      if (this.streamerLines) {
+        updateStreamerResolution(this.streamerLines, this.sizes.width, this.sizes.height);
       }
     });
   }
@@ -153,6 +160,32 @@ export class MapLayer extends MapApplication {
     this.scene.add(this.boundaryLines.top, this.boundaryLines.bottom);
   }
 
+  /**
+   * 添加流光动画线（叠加在边界线上方）
+   * 通过 TimeManager tick 事件每帧驱动 dashOffset，无需外部手动调用
+   */
+  addStreamer(
+    geojson: GeoJSON.FeatureCollection,
+    bboxOption: BboxOption,
+    style?: StreamerStyle
+  ): void {
+    this.clearStreamer();
+    this.streamerLines = buildStreamerLines(geojson, bboxOption, this.sizes, style);
+    this.scene.add(this.streamerLines.group);
+
+    // 注册 tick 监听，每帧推进 dashOffset 产生流动效果
+    this.time.on('tick', this.streamerLines.tick);
+  }
+
+  // 销毁流光线并解除 tick 监听
+  clearStreamer(): void {
+    if (!this.streamerLines) return;
+    this.time.off('tick', this.streamerLines.tick);
+    this.scene.remove(this.streamerLines.group);
+    this.streamerLines.dispose();
+    this.streamerLines = undefined;
+  }
+
   // 销毁边界线几何和材质资源
   clearBoundary(): void {
     if (!this.boundaryLines) return;
@@ -182,6 +215,7 @@ export class MapLayer extends MapApplication {
   }
 
   destroy(): void {
+    this.clearStreamer();
     this.clearBoundary();
     super.destroy();
   }
