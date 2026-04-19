@@ -8,6 +8,7 @@ import { DrillController } from "./map/drill";
 import { LabelController } from "./map/label";
 import { HighlightController } from "./map/highlight";
 import { FlylineController } from "./map/flyline";
+import { ParticleController } from "./map/particle";
 import * as turf from "@turf/turf";
 import "./App.css";
 
@@ -23,6 +24,7 @@ export default function App() {
     let labels: LabelController | null = null;
     let highlight: HighlightController | null = null;
     let flylines: FlylineController | null = null;
+    let particles: ParticleController | null = null;
 
     (async () => {
       // 数据管线：加载 GeoJSON → Mercator 投影 → 计算相机/bbox → 三角剖分 → 构建 Mesh
@@ -83,6 +85,10 @@ export default function App() {
         { color: "#00d4ff", speed: 0.6 },
       );
 
+      // 地图表面漂浮粒子
+      particles = new ParticleController(layer);
+      particles.setData(kv.bboxOption, { color: "#00d4ff", count: 2500 });
+
       // 钻取交互：双击省份飞入城市级，右键退回
       drill = new DrillController(layer);
       labels = new LabelController(layer.scene);
@@ -103,6 +109,7 @@ export default function App() {
       labels?.dispose();
       highlight?.dispose();
       flylines?.dispose();
+      particles?.dispose();
       layer.destroy();
     };
   }, []);

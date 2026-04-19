@@ -135,7 +135,7 @@
 > 在地图上叠加文字标注、城市间飞线、粒子特效
 
 - [x] 省/市/县名称标注（CSS2DRenderer）
-- [ ] 飞线（QuadraticBezierCurve3 + 动画 dashOffset）
+- [x] 飞线（QuadraticBezierCurve3 + 三层辉光 + 头部精灵）
 - [ ] 粒子特效（Points + ShaderMaterial）
 
 **方案**：各自独立模块，MapLayer 暴露对应 add/clear 方法。
