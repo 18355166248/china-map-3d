@@ -1,0 +1,140 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - img "logo" [ref=e6]: DataV
+      - link "首页" [ref=e8] [cursor=pointer]:
+        - /url: /portal
+        - generic [ref=e9]: 首页
+      - link "可视化学院" [ref=e11] [cursor=pointer]:
+        - /url: /portal/school/atlas/area_selector
+        - generic [ref=e12]: 可视化学院
+      - link "MCP" [ref=e14] [cursor=pointer]:
+        - /url: https://atlas.datav.aliyun.com/maptool/tools
+        - generic [ref=e15]: MCP
+    - generic [ref=e16]: 
+  - generic [ref=e17]:
+    - generic [ref=e20]:
+      - generic [ref=e21] [cursor=pointer]: 范围选择器
+      - generic [ref=e22] [cursor=pointer]:
+        - text: 数据编辑器
+        - img "ai-icon" [ref=e23]: DataV
+      - generic [ref=e24] [cursor=pointer]: 层级生成器
+      - link "ai-icon DataV.AI 数据内容创作助手 new" [ref=e26] [cursor=pointer]:
+        - /url: /portal?tool=atlas
+        - img "ai-icon" [ref=e27]: DataV
+        - text: DataV.AI 数据内容创作助手
+        - generic [ref=e28]: new
+      - link "question-circle" [ref=e30] [cursor=pointer]:
+        - /url: https://help.aliyun.com/zh/datav/datav-7-0/user-guide/datav-geoatlas-widgets
+        - img "question-circle" [ref=e31]:
+          - img [ref=e32]
+    - generic [ref=e38]:
+      - paragraph [ref=e41]:
+        - text: 本页面数据来源于
+        - link "高德开放平台" [ref=e42] [cursor=pointer]:
+          - /url: //lbs.amap.com/api/webservice/guide/api/district
+        - text: ，该版本数据更新于2021.5，仅供学习交流使用。
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - generic [ref=e46]: 数据版本：
+          - generic [ref=e48]:
+            - log [ref=e50]
+            - generic [ref=e51] [cursor=pointer]:
+              - generic [ref=e52]:
+                - generic [ref=e53]: areas_v3
+                - combobox [ref=e55]
+              - generic [ref=e58]: 
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - separator [ref=e61]
+            - generic [ref=e62]:
+              - paragraph [ref=e63]: 1.点击左侧地图选择行政区划范围，或在下方输入行政区划编码、名称搜索
+              - generic [ref=e66]:
+                - log [ref=e68]
+                - generic [ref=e69] [cursor=pointer]:
+                  - generic [ref=e70]:
+                    - generic [ref=e71]: 中华人民共和国
+                    - combobox [ref=e73]
+                  - generic [ref=e76]: 
+              - generic [ref=e77]:
+                - paragraph [ref=e78]: "当前选择:"
+                - paragraph [ref=e79]: 地名:中华人民共和国adcode:100000
+          - generic [ref=e80]:
+            - separator [ref=e81]
+            - generic [ref=e82]:
+              - paragraph [ref=e83]: 2.选择需要的数据粒度
+              - generic [ref=e85]:
+                - generic [ref=e86] [cursor=pointer]:
+                  - radio "国" [ref=e88]
+                  - generic [ref=e90]: 国
+                - generic [ref=e91] [cursor=pointer]:
+                  - radio "省" [checked] [ref=e93]
+                  - generic [ref=e95]: 省
+                - generic [ref=e96] [cursor=pointer]:
+                  - radio "市" [ref=e98]
+                  - generic [ref=e100]: 市
+              - text: JSON API
+              - generic [ref=e101]:
+                - textbox [ref=e103]: https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json
+                - button "" [ref=e104] [cursor=pointer]:
+                  - generic [ref=e105]: 
+              - text: 或
+              - generic [ref=e106]:
+                - textbox [ref=e108]: https://geo.datav.aliyun.com/areas_v3/bound/geojson?code=100000_full
+                - button "" [ref=e109] [cursor=pointer]:
+                  - generic [ref=e110]: 
+            - generic [ref=e111]:
+              - text: 其他类型(GeoJSON、SVG)
+              - generic [ref=e112]:
+                - generic [ref=e113]:
+                  - textbox [ref=e115]: GeoJSON
+                  - button "" [ref=e116] [cursor=pointer]:
+                    - generic [ref=e117]: 
+                  - button "" [ref=e118] [cursor=pointer]:
+                    - generic [ref=e119]: 
+                - generic [ref=e120]:
+                  - textbox [ref=e122]: SVG
+                  - button "" [ref=e123] [cursor=pointer]:
+                    - generic [ref=e124]: 
+    - generic [ref=e127]:
+      - generic [ref=e128]:
+        - generic [ref=e129]: 支持与服务
+        - list [ref=e130]:
+          - listitem [ref=e131]:
+            - link "产品版本" [ref=e132] [cursor=pointer]:
+              - /url: https://www.aliyun.com/product/bigdata/datav
+          - listitem [ref=e133]:
+            - link "产品教程" [ref=e134] [cursor=pointer]:
+              - /url: https://help.aliyun.com/document_detail/57578.html
+          - listitem [ref=e135]:
+            - link "帮助文档" [ref=e136] [cursor=pointer]:
+              - /url: https://help.aliyun.com/document_detail/30360.html
+          - listitem [ref=e137]:
+            - link "更多模版" [ref=e138] [cursor=pointer]:
+              - /url: https://www.aliyun.com/activity/intelligent/datav-showcase
+          - listitem [ref=e139]:
+            - link "阿里云官网" [ref=e140] [cursor=pointer]:
+              - /url: https://aliyun.com
+      - generic [ref=e141]:
+        - generic [ref=e142]: 快速入口
+        - list [ref=e143]:
+          - listitem [ref=e144]:
+            - link "DataV.GeoAtlas 范围选择器" [ref=e145] [cursor=pointer]:
+              - /url: /portal/school/atlas/area_selector
+          - listitem [ref=e146]:
+            - link "DataV.GeoAtlas 数据编辑器" [ref=e147] [cursor=pointer]:
+              - /url: /portal/school/atlas/area_generator
+          - listitem [ref=e148]:
+            - link "DataV.GeoAtlas 层级生成器" [ref=e149] [cursor=pointer]:
+              - /url: /portal/school/atlas/level_generator
+      - generic [ref=e150]:
+        - generic [ref=e151]: 联系我们
+        - list [ref=e152]:
+          - listitem [ref=e153]: 钉钉群号： 120015000065
+          - listitem [ref=e154]:
+            - link "加入我们" [ref=e155] [cursor=pointer]:
+              - /url: https://img.alicdn.com/imgextra/i1/O1CN018W6O7X1c3f5UDiWjU_!!6000000003545-0-tps-522-522.jpg
+      - generic [ref=e156]:
+        - paragraph [ref=e157]: 公众号
+        - generic [ref=e158]: DataV
+        - paragraph [ref=e159]: DataV数据可视化

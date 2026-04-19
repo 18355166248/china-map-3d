@@ -1,6 +1,6 @@
-import * as THREE from 'three';
+import * as THREE from "three";
 
-export type TextureType = 'map' | 'normalMap' | 'emissiveMap';
+export type TextureType = "map" | "normalMap" | "emissiveMap";
 
 /**
  * 加载单张图片纹理

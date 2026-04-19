@@ -1,17 +1,28 @@
-import * as THREE from 'three';
-import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
-import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-import MapApplication from '../core/MapApplication';
-import type { BboxOption } from '../geo/camera';
-import type { GeomData } from '../geo/triangulate';
-import { toBufferGeometry } from '../geo/triangulate';
-import { buildInnerShadowTexture, type InnerShadowStyle } from './innerShadow';
-import { buildBoundaryLines, updateBoundaryResolution, type BoundaryStyle, type BoundaryLines } from './boundary';
-import { buildStreamerLines, updateStreamerResolution, type StreamerStyle, type StreamerLines } from './streamer';
-import { loadTexture, type TextureType } from './texture';
+import * as THREE from "three";
+import * as turf from "@turf/turf";
+import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import MapApplication from "../core/MapApplication";
+import type { BboxOption } from "../geo/camera";
+import type { GeomData } from "../geo/triangulate";
+import { toBufferGeometry } from "../geo/triangulate";
+import { buildInnerShadowTexture, type InnerShadowStyle } from "./innerShadow";
+import {
+  buildBoundaryLines,
+  updateBoundaryResolution,
+  type BoundaryStyle,
+  type BoundaryLines,
+} from "./boundary";
+import {
+  buildStreamerLines,
+  updateStreamerResolution,
+  type StreamerStyle,
+  type StreamerLines,
+} from "./streamer";
+import { loadTexture, type TextureType } from "./texture";
 
 // 侧面顶点着色器：透传 uv，用于片元着色器做顶底渐变
-const SIDE_VERT = /* glsl */`
+const SIDE_VERT = /* glsl */ `
   varying vec2 vUv;
   void main() {
     vUv = uv;
@@ -20,7 +31,7 @@ const SIDE_VERT = /* glsl */`
 `;
 
 // 侧面片元着色器：按 vUv.y（0=底 1=顶）在 bottomColor 和 topColor 之间线性插值
-const SIDE_FRAG = /* glsl */`
+const SIDE_FRAG = /* glsl */ `
   uniform vec3 topColor;
   uniform vec3 bottomColor;
   varying vec2 vUv;
@@ -55,26 +66,40 @@ export class MapLayer extends MapApplication {
     this.scene.add(ambient, dir);
 
     // resize 时更新边界线和流光线分辨率，LineMaterial 依赖此值计算像素线宽
-    this.sizes.on('resize', () => {
+    this.sizes.on("resize", () => {
       if (this.boundaryLines) {
-        updateBoundaryResolution(this.boundaryLines, this.sizes.width, this.sizes.height);
+        updateBoundaryResolution(
+          this.boundaryLines,
+          this.sizes.width,
+          this.sizes.height,
+        );
       }
       if (this.streamerLines) {
-        updateStreamerResolution(this.streamerLines, this.sizes.width, this.sizes.height);
+        updateStreamerResolution(
+          this.streamerLines,
+          this.sizes.width,
+          this.sizes.height,
+        );
       }
     });
   }
 
   buildMeshes(
-    geomGroup: { index: number[]; position: number[]; normal: number[]; uv: number[]; group: number[] },
+    geomGroup: {
+      index: number[];
+      position: number[];
+      normal: number[];
+      uv: number[];
+      group: number[];
+    },
     bboxOption: BboxOption,
-    opts: MapLayerOptions = {}
+    opts: MapLayerOptions = {},
   ): void {
     this.clearMeshes();
 
     const { baseHeight } = bboxOption;
-    const topColor = opts.topColor ?? '#2a6496';
-    const bottomColor = opts.bottomColor ?? '#0d2137';
+    const topColor = opts.topColor ?? "#2a6496";
+    const bottomColor = opts.bottomColor ?? "#0d2137";
 
     // group 格式：[groupId, indexLen, vertexCount, groupId, indexLen, ...]
     // group[1]/group[2] 对应顶面，group[4] 对应侧面索引数量
@@ -105,14 +130,18 @@ export class MapLayer extends MapApplication {
     });
     this.topMesh = new THREE.Mesh(topGeo, topMat);
     this.topMesh.scale.z = baseHeight;
-    this.topMesh.name = 'map-top';
+    this.topMesh.name = "map-top";
 
     // 内阴影层：复用顶面几何，略高于顶面（1.01x）避免 z-fighting
     // opacity 初始为 0，调用 applyInnerShadow 后生效
-    const shadowMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+    const shadowMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    });
     this.innerShadowMesh = new THREE.Mesh(topGeo, shadowMat);
     this.innerShadowMesh.scale.z = 1.01 * baseHeight;
-    this.innerShadowMesh.name = 'map-innerShadow';
+    this.innerShadowMesh.name = "map-innerShadow";
 
     // 侧面：用自定义 ShaderMaterial 实现顶底颜色渐变
     const sideGeo = toBufferGeometry(sideData);
@@ -127,7 +156,7 @@ export class MapLayer extends MapApplication {
     this.sideMesh = new THREE.Mesh(sideGeo, sideMat);
     this.sideMesh.scale.z = baseHeight;
     this.sideMesh.castShadow = true;
-    this.sideMesh.name = 'map-side';
+    this.sideMesh.name = "map-side";
 
     this.scene.add(this.topMesh, this.innerShadowMesh, this.sideMesh);
   }
@@ -136,7 +165,7 @@ export class MapLayer extends MapApplication {
   applyInnerShadow(
     geojson: GeoJSON.FeatureCollection,
     bboxOption: BboxOption,
-    style?: InnerShadowStyle
+    style?: InnerShadowStyle,
   ): void {
     if (!this.innerShadowMesh) return;
     const texture = buildInnerShadowTexture(geojson, bboxOption, style);
@@ -154,10 +183,15 @@ export class MapLayer extends MapApplication {
   addBoundary(
     geojson: GeoJSON.FeatureCollection,
     bboxOption: BboxOption,
-    style?: BoundaryStyle
+    style?: BoundaryStyle,
   ): void {
     this.clearBoundary();
-    this.boundaryLines = buildBoundaryLines(geojson, bboxOption, this.sizes, style);
+    this.boundaryLines = buildBoundaryLines(
+      geojson,
+      bboxOption,
+      this.sizes,
+      style,
+    );
     this.scene.add(this.boundaryLines.top, this.boundaryLines.bottom);
   }
 
@@ -168,20 +202,25 @@ export class MapLayer extends MapApplication {
   addStreamer(
     geojson: GeoJSON.FeatureCollection,
     bboxOption: BboxOption,
-    style?: StreamerStyle
+    style?: StreamerStyle,
   ): void {
     this.clearStreamer();
-    this.streamerLines = buildStreamerLines(geojson, bboxOption, this.sizes, style);
+    this.streamerLines = buildStreamerLines(
+      geojson,
+      bboxOption,
+      this.sizes,
+      style,
+    );
     this.scene.add(this.streamerLines.group);
 
     // 注册 tick 监听，每帧推进 dashOffset 产生流动效果
-    this.time.on('tick', this.streamerLines.tick);
+    this.time.on("tick", this.streamerLines.tick);
   }
 
   // 销毁流光线并解除 tick 监听
   clearStreamer(): void {
     if (!this.streamerLines) return;
-    this.time.off('tick', this.streamerLines.tick);
+    this.time.off("tick", this.streamerLines.tick);
     this.scene.remove(this.streamerLines.group);
     this.streamerLines.dispose();
     this.streamerLines = undefined;
@@ -190,22 +229,24 @@ export class MapLayer extends MapApplication {
   // 销毁边界线几何和材质资源
   clearBoundary(): void {
     if (!this.boundaryLines) return;
-    [this.boundaryLines.top, this.boundaryLines.bottom].forEach((line: LineSegments2) => {
-      this.scene.remove(line);
-      line.geometry.dispose();
-      (line.material as LineMaterial).dispose();
-    });
+    [this.boundaryLines.top, this.boundaryLines.bottom].forEach(
+      (line: LineSegments2) => {
+        this.scene.remove(line);
+        line.geometry.dispose();
+        (line.material as LineMaterial).dispose();
+      },
+    );
     this.boundaryLines = undefined;
   }
 
   // 销毁所有 Mesh 及其材质/几何资源，buildMeshes 前调用保证无重复对象
   clearMeshes(): void {
-    [this.topMesh, this.innerShadowMesh, this.sideMesh].forEach(mesh => {
+    [this.topMesh, this.innerShadowMesh, this.sideMesh].forEach((mesh) => {
       if (!mesh) return;
       this.scene.remove(mesh);
       mesh.geometry.dispose();
       if (Array.isArray(mesh.material)) {
-        mesh.material.forEach(m => m.dispose());
+        mesh.material.forEach((m) => m.dispose());
       } else {
         mesh.material.dispose();
       }
@@ -232,5 +273,38 @@ export class MapLayer extends MapApplication {
     if (old) old.dispose();
     mat[type] = await loadTexture(url);
     mat.needsUpdate = true;
+  }
+
+  /**
+   * 射线检测：NDC 坐标 → 与 topMesh 求交 → 点面检测找到对应 feature
+   * ndcX/ndcY 范围 [-1, 1]，由鼠标像素坐标转换而来
+   */
+  hitTest(
+    ndcX: number,
+    ndcY: number,
+    projected: GeoJSON.FeatureCollection,
+  ): GeoJSON.Feature | null {
+    if (!this.topMesh) return null;
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(
+      new THREE.Vector2(ndcX, ndcY),
+      this.camera.instance,
+    );
+    const hits = raycaster.intersectObject(this.topMesh);
+    if (!hits.length) return null;
+    // topMesh.scale.z = baseHeight，x/y 仍是 Mercator 投影坐标
+    const { x, y } = hits[0].point;
+    const pt = turf.point([x, y]);
+    for (const f of projected.features) {
+      if (
+        turf.booleanPointInPolygon(
+          pt,
+          f as GeoJSON.Feature<GeoJSON.Polygon | GeoJSON.MultiPolygon>,
+        )
+      ) {
+        return f;
+      }
+    }
+    return null;
   }
 }
