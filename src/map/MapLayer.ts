@@ -8,6 +8,7 @@ import { toBufferGeometry } from '../geo/triangulate';
 import { buildInnerShadowTexture, type InnerShadowStyle } from './innerShadow';
 import { buildBoundaryLines, updateBoundaryResolution, type BoundaryStyle, type BoundaryLines } from './boundary';
 import { buildStreamerLines, updateStreamerResolution, type StreamerStyle, type StreamerLines } from './streamer';
+import { loadTexture, type TextureType } from './texture';
 
 // 侧面顶点着色器：透传 uv，用于片元着色器做顶底渐变
 const SIDE_VERT = /* glsl */`
@@ -218,5 +219,18 @@ export class MapLayer extends MapApplication {
     this.clearStreamer();
     this.clearBoundary();
     super.destroy();
+  }
+
+  /**
+   * 加载图片纹理并贴到顶面，支持 map / normalMap / emissiveMap
+   * 重复调用会自动释放旧纹理，防止 GPU 显存泄漏
+   */
+  async setTexture(type: TextureType, url: string): Promise<void> {
+    if (!this.topMesh) return;
+    const mat = this.topMesh.material as THREE.MeshStandardMaterial;
+    const old = mat[type] as THREE.Texture | null;
+    if (old) old.dispose();
+    mat[type] = await loadTexture(url);
+    mat.needsUpdate = true;
   }
 }

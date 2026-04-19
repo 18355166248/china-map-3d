@@ -49,6 +49,9 @@ export default function App() {
       } as GeoJSON.FeatureCollection<GeoJSON.Polygon>;
       const dissolved = turf.dissolve(withGroup, { propertyName: '_group' });
       layer.addStreamer(dissolved, kv.bboxOption, { color: '#00ffff', linewidth: 2, speed: 0.3, minLength: 2000 });
+
+      // 纹理贴图
+      await layer.setTexture('map', '/textures/wenli.jpg');
     })();
 
     return () => {
