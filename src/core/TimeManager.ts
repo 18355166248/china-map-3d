@@ -1,4 +1,4 @@
-import { Timer } from "three/addons/misc/Timer.js";
+import { Timer } from "three/src/core/Timer.js";
 import EventEmitter from "./EventEmitter";
 
 // RAF 驱动的帧定时器，每帧 emit('tick', deltaTime, elapsedTime)
