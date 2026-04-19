@@ -73,11 +73,13 @@ export class HighlightController {
       transparent: true,
       opacity: 0.25,
       depthWrite: false,
+      depthTest: false, // 关闭深度测试，确保高亮始终显示在顶面上方
     });
     this.mesh = new THREE.Mesh(geo, mat);
-    // 略高于顶面，避免 z-fighting
     this.mesh.scale.z = baseHeight * 1.02;
     this.mesh.name = "highlight";
+    // renderOrder 高于其他 mesh，确保最后渲染，不被透明排序影响
+    this.mesh.renderOrder = 10;
     this.layer.scene.add(this.mesh);
   }
 
