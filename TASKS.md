@@ -78,8 +78,8 @@
 
 > 参考 `index.6dcce8bc.js:64802` LV 类
 
-- [ ] 流光 ShaderMaterial（dashOffset uniform + mod 循环）
-- [ ] `time.on('tick')` 每帧 `dashOffset -= 5e-4 * speed`（通过 TimeManager 驱动）
+- [x] 流光 ShaderMaterial（dashOffset uniform + mod 循环）
+- [x] `time.on('tick')` 每帧 `dashOffset -= 5e-4 * speed`（通过 TimeManager 驱动）
 
 **方案**：`src/map/streamer.ts` 实现 StreamerMaterial，在 MapLayer 构造时注册 tick 监听。
 
@@ -88,10 +88,11 @@
 > 参考 `OV_map.js`
 
 - [x] 单图片纹理（TextureLoader）→ topMesh material.map
-- [ ] 瓦片拼接纹理（getTilesInBbox → 并行 fetch → Canvas 拼接）
+- [x] 瓦片拼接纹理（天地图 WMTS → Canvas 拼接 → CanvasTexture），Vite proxy 绕过 CORS
 - [x] 支持 map / normalMap / emissiveMap
+- [x] 钻取时自动更新瓦片纹理（`DrillController.onAfterRebuild` 回调）
 
-**方案**：`src/map/texture.ts`，MapLayer 暴露 `setTexture(type, url|tileTemplate)` 方法。
+**方案**：`src/map/tileTexture.ts` 实现 `buildTileTexture(bboxProj, layer)`，`MapLayer.applyTextureObject()` 应用纹理对象。
 
 ## Step 9 — 钻取交互 `[x]`
 
@@ -127,6 +128,7 @@
 - [x] mousemove 事件 + Raycaster hitTest 找到当前 hover feature
 - [x] 高亮 Mesh：单 feature 三角剖分，叠加半透明白色高亮
 - [x] 鼠标移出时恢复，cursor 切换为 pointer
+- [x] **修复**：`depthTest: false` + `renderOrder: 10`，解决透明排序导致高亮被 topMesh 遮挡的问题
 
 **方案**：`src/map/highlight.ts` HighlightController，按需构建高亮 Mesh。
 
@@ -158,6 +160,6 @@
 
 ## 已知问题 / 待验证
 
-- [ ] 侧面 UV 末尾闭合段未处理（最后一段回到起点的 UV 可能缺失）
-- [ ] MultiPolygon 特征的侧面法线方向待验证
-- [ ] OrbitControls 的 minDistance / maxDistance 需根据 bboxSize 动态设置（在 CameraManager.applyStatus 中设置）
+- [x] 侧面 UV 末尾闭合段未处理（最后一段回到起点的 UV 可能缺失）
+- [x] MultiPolygon 特征的侧面法线方向待验证
+- [x] OrbitControls 的 minDistance / maxDistance 需根据 bboxSize 动态设置（在 CameraManager.applyStatus 中设置）
