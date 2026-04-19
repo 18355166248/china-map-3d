@@ -5,6 +5,8 @@ import { loadGeoJSON } from "./geo/loader";
 import { buildGeometry } from "./geo/triangulate";
 import { MapLayer } from "./map/MapLayer";
 import { DrillController } from "./map/drill";
+import { LabelController } from "./map/label";
+import { HighlightController } from "./map/highlight";
 import * as turf from "@turf/turf";
 import "./App.css";
 
@@ -17,6 +19,8 @@ export default function App() {
     const layer = new MapLayer(canvas);
     let cancelled = false;
     let drill: DrillController | null = null;
+    let labels: LabelController | null = null;
+    let highlight: HighlightController | null = null;
 
     (async () => {
       // 数据管线：加载 GeoJSON → Mercator 投影 → 计算相机/bbox → 三角剖分 → 构建 Mesh
@@ -64,14 +68,25 @@ export default function App() {
       // 纹理贴图
       await layer.setTexture("map", "/textures/wenli.jpg");
 
-      // 钻取交互：点击省份飞入城市级，右键退回
+      // 钻取交互：双击省份飞入城市级，右键退回
       drill = new DrillController(layer);
+      labels = new LabelController(layer.scene);
+      highlight = new HighlightController(layer);
+
+      // 层级切换时同步更新标注和高亮
+      drill.onLevelChange = (projected, bboxOption, depth) => {
+        labels!.update(projected, bboxOption, depth);
+        highlight!.update(projected, bboxOption);
+      };
+
       drill.init({ projected, bboxProj, kv });
     })();
 
     return () => {
       cancelled = true;
       drill?.dispose();
+      labels?.dispose();
+      highlight?.dispose();
       layer.destroy();
     };
   }, []);

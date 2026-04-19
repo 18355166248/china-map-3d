@@ -8,3 +8,30 @@ body {
   background: #0a0e1a;
   overflow: hidden;
 }
+
+/* 地图标注 */
+.map-label {
+  color: #e0f4ff;
+  text-shadow:
+    0 0 6px rgba(0, 200, 255, 0.8),
+    0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+}
+
+.map-label--province {
+  font-size: 13px;
+}
+
+.map-label--city {
+  font-size: 11px;
+}
+
+.map-label--county {
+  font-size: 10px;
+  opacity: 0.85;
+}

@@ -1,7 +1,12 @@
 import * as THREE from "three";
 import * as turf from "@turf/turf";
 import { projectGeoJSON } from "../geo/transform";
-import { computeKV, type CameraStatus, type KVResult } from "../geo/camera";
+import {
+  computeKV,
+  type CameraStatus,
+  type KVResult,
+  type BboxOption,
+} from "../geo/camera";
 import { loadGeoJSON } from "../geo/loader";
 import { buildGeometry } from "../geo/triangulate";
 import type { MapLayer } from "./MapLayer";
@@ -63,6 +68,13 @@ export class DrillController {
   private stack: DrillLevel[] = [];
   private animating = false;
 
+  /** 层级切换后触发，参数为新层的数据和当前深度（1=省 2=市 3=县） */
+  onLevelChange?: (
+    projected: GeoJSON.FeatureCollection,
+    bboxOption: BboxOption,
+    depth: number,
+  ) => void;
+
   constructor(layer: MapLayer) {
     this.layer = layer;
     layer.canvas.addEventListener("dblclick", this.onDblClick);
@@ -72,6 +84,7 @@ export class DrillController {
   /** 初始化根层（全国省级视图） */
   init(level: DrillLevel): void {
     this.stack = [level];
+    this.onLevelChange?.(level.projected, level.kv.bboxOption, 1);
   }
 
   private onDblClick = async (e: MouseEvent): Promise<void> => {
@@ -132,6 +145,11 @@ export class DrillController {
     await this.fadeIn();
 
     this.stack.push(level);
+    this.onLevelChange?.(
+      level.projected,
+      level.kv.bboxOption,
+      this.stack.length,
+    );
     this.layer.camera.controls.enabled = true;
     this.animating = false;
   }
@@ -157,6 +175,7 @@ export class DrillController {
     // Phase 2：新 mesh 淡入
     await this.fadeIn();
 
+    this.onLevelChange?.(prev.projected, prev.kv.bboxOption, this.stack.length);
     this.layer.camera.controls.enabled = true;
     this.animating = false;
   }
