@@ -9,6 +9,7 @@ import { LabelController } from "./map/label";
 import { HighlightController } from "./map/highlight";
 import { FlylineController } from "./map/flyline";
 import { ParticleController } from "./map/particle";
+import { buildTileTexture } from "./map/tileTexture";
 import * as turf from "@turf/turf";
 import "./App.css";
 
@@ -69,8 +70,13 @@ export default function App() {
         minLength: 2000,
       });
 
-      // 纹理贴图
-      await layer.setTexture("map", "/textures/wenli.jpg");
+      // 纹理贴图：拼接天地图卫星瓦片，失败时静默降级（保留纯色）
+      try {
+        const tileTexture = await buildTileTexture(bboxProj);
+        layer.applyTextureObject("map", tileTexture, true);
+      } catch (e) {
+        console.warn("天地图瓦片加载失败，使用纯色", e);
+      }
 
       // 飞线示例（北京→上海→广州→成都→北京）
       flylines = new FlylineController(layer);
@@ -93,6 +99,16 @@ export default function App() {
       drill = new DrillController(layer);
       labels = new LabelController(layer.scene);
       highlight = new HighlightController(layer);
+
+      // 钻取时同步更新瓦片纹理，失败静默降级
+      drill.onAfterRebuild = async (drillBboxProj) => {
+        try {
+          const tex = await buildTileTexture(drillBboxProj);
+          layer.applyTextureObject("map", tex, true);
+        } catch (e) {
+          console.warn("钻取瓦片加载失败", e);
+        }
+      };
 
       // 层级切换时同步更新标注和高亮
       drill.onLevelChange = (projected, bboxOption, depth) => {

@@ -281,6 +281,24 @@ export class MapLayer extends MapApplication {
   }
 
   /**
+   * 直接应用已构建的纹理对象到顶面
+   * resetColor=true 时将顶面颜色重置为白色，避免纯色叠加污染纹理（如卫星图）
+   */
+  applyTextureObject(
+    type: TextureType,
+    texture: THREE.Texture,
+    resetColor = false,
+  ): void {
+    if (!this.topMesh) return;
+    const mat = this.topMesh.material as THREE.MeshStandardMaterial;
+    const old = mat[type] as THREE.Texture | null;
+    if (old) old.dispose();
+    mat[type] = texture;
+    if (resetColor) mat.color.set(0xffffff);
+    mat.needsUpdate = true;
+  }
+
+  /**
    * 统一设置顶面/侧面/内阴影的透明度，用于钻取动画淡入淡出
    * opacity=1 时关闭 depthWrite 以外的透明排序问题
    */

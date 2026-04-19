@@ -75,6 +75,9 @@ export class DrillController {
     depth: number,
   ) => void;
 
+  /** 重建 mesh 后、淡入前触发，可用于异步更新纹理（如拉取瓦片） */
+  onAfterRebuild?: (bboxProj: [number, number, number, number]) => Promise<void>;
+
   constructor(layer: MapLayer) {
     this.layer = layer;
     layer.canvas.addEventListener("dblclick", this.onDblClick);
@@ -140,6 +143,8 @@ export class DrillController {
       speed: 0.3,
       minLength,
     });
+    // 纹理更新（如瓦片拉取）在淡入前完成，避免闪烁
+    if (this.onAfterRebuild) await this.onAfterRebuild(level.bboxProj);
     this.layer.setSceneOpacity(0);
     // Phase 2：新 mesh 淡入
     await this.fadeIn();
@@ -171,6 +176,8 @@ export class DrillController {
       speed: 0.3,
       minLength: 2000,
     });
+    // 纹理更新（如瓦片拉取）在淡入前完成，避免闪烁
+    if (this.onAfterRebuild) await this.onAfterRebuild(prev.bboxProj);
     this.layer.setSceneOpacity(0);
     // Phase 2：新 mesh 淡入
     await this.fadeIn();
