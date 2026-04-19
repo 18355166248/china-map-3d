@@ -106,7 +106,7 @@ export class FlylineController {
       color = "#00d4ff",
       speed = 0.7,
       arcHeightFactor = 0.35,
-      dashRatio = 0.06,
+      dashRatio = 0.2,
       segments = 80,
     } = style;
 
@@ -155,12 +155,12 @@ export class FlylineController {
       // 外层：宽 + 极透明（模拟 bloom 扩散）
       const outerMat = new LineMaterial({
         color: hex,
-        linewidth: 6,
+        linewidth: 8,
         dashed: true,
         dashSize,
         gapSize,
         dashOffset: 0,
-        opacity: 0.12,
+        opacity: 0.2,
         transparent: true,
         depthWrite: false,
       });
@@ -169,12 +169,12 @@ export class FlylineController {
       // 中层：中宽 + 半透明
       const midMat = new LineMaterial({
         color: hex,
-        linewidth: 3,
+        linewidth: 4,
         dashed: true,
         dashSize,
         gapSize,
         dashOffset: 0,
-        opacity: 0.45,
+        opacity: 0.65,
         transparent: true,
         depthWrite: false,
       });
@@ -182,8 +182,8 @@ export class FlylineController {
 
       // 核心：细 + 全亮
       const coreMat = new LineMaterial({
-        color: 0xffffff, // 白色核心更亮
-        linewidth: 1.2,
+        color: 0xffffff,
+        linewidth: 1.5,
         dashed: true,
         dashSize,
         gapSize,
