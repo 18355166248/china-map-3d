@@ -28,7 +28,9 @@ class Renderer {
       antialias: true,
       alpha: true,
     });
-    this.instance.setSize(sizes.width, sizes.height);
+    // updateStyle=false：不让 Three.js 覆盖 canvas 的 CSS 尺寸（100vw/100vh），
+    // 否则宽屏下 canvas style 被固定为初始像素值，导致地图偏移和线条渲染异常
+    this.instance.setSize(sizes.width, sizes.height, false);
     this.instance.setPixelRatio(sizes.pixelRatio);
     this.instance.shadowMap.enabled = true;
 
@@ -43,7 +45,7 @@ class Renderer {
   }
 
   resize(): void {
-    this.instance.setSize(this.sizes.width, this.sizes.height);
+    this.instance.setSize(this.sizes.width, this.sizes.height, false);
     this.instance.setPixelRatio(this.sizes.pixelRatio);
     this.css2d.setSize(this.sizes.width, this.sizes.height);
   }
