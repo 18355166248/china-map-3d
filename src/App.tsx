@@ -30,7 +30,7 @@ export default function App() {
       // projected 坐标系与 Three.js 场景坐标系一致（Mercator 平面坐标）
       const projected = projectGeoJSON(raw) as GeoJSON.FeatureCollection;
       const bboxProj = turf.bbox(projected) as [number, number, number, number];
-      const kv = computeKV({ geojsonProj: projected, pitch: 40, rotation: 4 });
+      const kv = computeKV({ geojsonProj: projected, pitch: 10, rotation: 4 });
 
       layer.camera.applyStatus(kv.cameraStatus);
 

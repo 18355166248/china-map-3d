@@ -8,7 +8,10 @@
       "Bash(node -e \"const p = require\\('./node_modules/pbf/index.js'\\); console.log\\(typeof p\\)\")",
       "Bash(npx tsc *)",
       "Bash(node -e \"import\\('earcut'\\).then\\(m => console.log\\(Object.keys\\(m\\)\\)\\)\")",
-      "Read(//f/FrontEnd/Code/3DMap-zhejiang/packages/threejs-demo/src/examples/**)"
+      "Read(//f/FrontEnd/Code/3DMap-zhejiang/packages/threejs-demo/src/examples/**)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(npx prettier *)"
     ]
   }
 }
