@@ -10,6 +10,7 @@ import { HighlightController } from "./map/highlight";
 import { FlylineController } from "./map/flyline";
 import { ParticleController } from "./map/particle";
 import { buildTileTexture } from "./map/tileTexture";
+import { GridBackground } from "./map/grid";
 import * as turf from "@turf/turf";
 import "./App.css";
 
@@ -26,6 +27,7 @@ export default function App() {
     let highlight: HighlightController | null = null;
     let flylines: FlylineController | null = null;
     let particles: ParticleController | null = null;
+    let grid: GridBackground | null = null;
 
     (async () => {
       // 数据管线：加载 GeoJSON → Mercator 投影 → 计算相机/bbox → 三角剖分 → 构建 Mesh
@@ -38,6 +40,10 @@ export default function App() {
       const kv = computeKV({ geojsonProj: projected, pitch: 10, rotation: 4 });
 
       layer.camera.applyStatus(kv.cameraStatus);
+
+      // 背景网格：在地图底面之下，扩散光环动画
+      // rotation=4 与相机方位角一致，消除视角偏斜
+      grid = new GridBackground(layer.scene, layer.time, kv.bboxOption, {}, 4);
 
       const geomGroup = buildGeometry(projected, bboxProj);
       layer.buildMeshes(geomGroup, kv.bboxOption);
@@ -126,6 +132,7 @@ export default function App() {
       highlight?.dispose();
       flylines?.dispose();
       particles?.dispose();
+      grid?.dispose();
       layer.destroy();
     };
   }, []);
