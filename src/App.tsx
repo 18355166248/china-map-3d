@@ -87,7 +87,7 @@ export default function App() {
 
       // 地图表面漂浮粒子
       particles = new ParticleController(layer);
-      particles.setData(kv.bboxOption, { color: "#00d4ff", count: 2500 });
+      particles.setData(kv.bboxOption, { color: "#00d4ff", count: 150, sizeMin: 300, sizeMax: 500 });
 
       // 钻取交互：双击省份飞入城市级，右键退回
       drill = new DrillController(layer);
