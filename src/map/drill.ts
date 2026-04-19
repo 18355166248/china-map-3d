@@ -205,6 +205,8 @@ export class DrillController {
         }
 
         if (rawT >= 1) {
+          // 动画结束时应用完整状态，包括 minDistance/maxDistance
+          this.layer.camera.applyStatus(target);
           this.layer.time.off("tick", tick);
           resolve();
         }

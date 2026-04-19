@@ -106,13 +106,13 @@
 
 ---
 
-## Step 10 — 已知问题修复 `[ ]`
+## Step 10 — 已知问题修复 `[x]`
 
-- [ ] OrbitControls minDistance / maxDistance 根据 bboxSize 动态设置，防止缩放过近/过远
-- [ ] 侧面 UV 末尾闭合段处理（最后一段回到起点的 UV 可能缺失）
-- [ ] MultiPolygon 特征侧面法线方向验证
+- [x] OrbitControls minDistance / maxDistance 根据 bboxSize 动态设置，防止缩放过近/过远
+- [x] 侧面 UV 末尾闭合段已验证：循环覆盖最后一段，shader 只用 vUv.y，无视觉问题
+- [x] MultiPolygon 特征侧面法线方向已验证：isClockwiseContour 判断绕向，法线朝外
 
-**方案**：`CameraManager.applyStatus` 中设置 minDistance/maxDistance；`triangulate.ts` 修复侧面 UV。
+**方案**：`CameraStatus` 新增 `minDistance`/`maxDistance`，`computeKV` 按 `bboxSize * 0.05/5` 计算，`applyStatus` 和动画结束时应用。
 
 ## Step 11 — 县级钻取 `[ ]`
 

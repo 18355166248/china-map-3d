@@ -1,5 +1,5 @@
-import * as turf from '@turf/turf';
-import { project, unproject, WORLD_BBOX_SIZE } from './projection';
+import * as turf from "@turf/turf";
+import { project, unproject, WORLD_BBOX_SIZE } from "./projection";
 
 const DEG_TO_RAD = Math.PI / 180;
 
@@ -11,34 +11,50 @@ const CHINA_BBOX = {
 };
 
 export interface BboxOption {
-  bbox: [number, number, number, number];       // 经纬度 bbox [minLon, minLat, maxLon, maxLat]
-  bboxProj: [number, number, number, number];   // 投影坐标 bbox [x0, y0, x1, y1]
-  center: [number, number, number];             // 经纬度中心点
-  centerProj: [number, number, number];         // 投影坐标中心点
-  size: { width: number; height: number; minSize: number; maxSize: number; bboxSize: number };
-  bboxScale: number;   // 相对中国全图的缩放比例
-  baseHeight: number;  // 地图拉伸高度（bboxSize 的 5% × heightFactor）
+  bbox: [number, number, number, number]; // 经纬度 bbox [minLon, minLat, maxLon, maxLat]
+  bboxProj: [number, number, number, number]; // 投影坐标 bbox [x0, y0, x1, y1]
+  center: [number, number, number]; // 经纬度中心点
+  centerProj: [number, number, number]; // 投影坐标中心点
+  size: {
+    width: number;
+    height: number;
+    minSize: number;
+    maxSize: number;
+    bboxSize: number;
+  };
+  bboxScale: number; // 相对中国全图的缩放比例
+  baseHeight: number; // 地图拉伸高度（bboxSize 的 5% × heightFactor）
 }
 
 export interface CameraStatus {
   near: number;
   far: number;
-  target: [number, number, number];    // OrbitControls 焦点（地图中心）
-  position: [number, number, number];  // 相机世界坐标
-  up: [number, number, number];        // 相机 up 向量
+  minDistance: number; // OrbitControls 最近缩放距离
+  maxDistance: number; // OrbitControls 最远缩放距离
+  target: [number, number, number]; // OrbitControls 焦点（地图中心）
+  position: [number, number, number]; // 相机世界坐标
+  up: [number, number, number]; // 相机 up 向量
 }
 
 export interface KVResult {
   bboxOption: BboxOption;
   cameraStatus: CameraStatus;
-  layerFitValue: { xy: number; z: number; flylineWidth: number; straightLineWidth: number };
+  layerFitValue: {
+    xy: number;
+    z: number;
+    flylineWidth: number;
+    straightLineWidth: number;
+  };
 }
 
 /**
  * 根据 pitch（仰角）和 rotation（方位角）计算相机方向单位向量
  * 坐标系：X 向东，Y 向北，Z 向上
  */
-function cameraDirection(pitch: number, rotation: number): [number, number, number] {
+function cameraDirection(
+  pitch: number,
+  rotation: number,
+): [number, number, number] {
   const pitchRad = pitch * DEG_TO_RAD;
   const rotationRad = rotation * DEG_TO_RAD;
   return [
@@ -69,15 +85,28 @@ function maxOf(arr: number[]): number {
 function calcBboxOptions(
   bboxProj: [number, number, number, number],
   worldBboxSize: number,
-  heightFactor: number
+  heightFactor: number,
 ): BboxOption {
   const [minX, minY, maxX, maxY] = bboxProj;
-  const centerProj: [number, number, number] = [(minX + maxX) / 2, (minY + maxY) / 2, 0];
+  const centerProj: [number, number, number] = [
+    (minX + maxX) / 2,
+    (minY + maxY) / 2,
+    0,
+  ];
 
   const [minLon, minLat] = unproject(minX, minY);
   const [maxLon, maxLat] = unproject(maxX, maxY);
-  const bbox: [number, number, number, number] = [minLon, minLat, maxLon, maxLat];
-  const center: [number, number, number] = [(minLon + maxLon) / 2, (minLat + maxLat) / 2, 0];
+  const bbox: [number, number, number, number] = [
+    minLon,
+    minLat,
+    maxLon,
+    maxLat,
+  ];
+  const center: [number, number, number] = [
+    (minLon + maxLon) / 2,
+    (minLat + maxLat) / 2,
+    0,
+  ];
 
   const width = Math.abs(maxX - minX);
   const height = Math.abs(maxY - minY);
@@ -85,19 +114,29 @@ function calcBboxOptions(
   const maxSize = Math.max(width, height);
 
   // bboxSize 按当前数据相对中国全图的比例缩放，保持各级别地图拉伸高度一致
-  const bboxSize = maxOf([width / CHINA_BBOX.width, height / CHINA_BBOX.height]) * CHINA_BBOX.bboxSize;
+  const bboxSize =
+    maxOf([width / CHINA_BBOX.width, height / CHINA_BBOX.height]) *
+    CHINA_BBOX.bboxSize;
   const bboxScale = bboxSize / worldBboxSize;
 
   // baseHeight = bboxSize * 5%，决定地图立体拉伸高度，可通过 heightFactor 调整
   const baseHeight = bboxSize * heightFactor * 0.05;
 
-  return { bbox, bboxProj, center, centerProj, size: { width, height, minSize, maxSize, bboxSize }, bboxScale, baseHeight };
+  return {
+    bbox,
+    bboxProj,
+    center,
+    centerProj,
+    size: { width, height, minSize, maxSize, bboxSize },
+    bboxScale,
+    baseHeight,
+  };
 }
 
 export interface KVOptions {
   geojsonProj: GeoJSON.GeoJSON;
-  pitch?: number;       // 仰角，默认 40°
-  rotation?: number;    // 水平旋转角，默认 4°
+  pitch?: number; // 仰角，默认 40°
+  rotation?: number; // 水平旋转角，默认 4°
   offset?: [number, number, number]; // 相机位置偏移系数，z 分量控制镜头距离
   heightFactor?: number;
 }
@@ -116,7 +155,12 @@ export function computeKV(opts: KVOptions): KVResult {
     heightFactor = 1,
   } = opts;
 
-  const rawBbox = turf.bbox(geojsonProj as turf.AllGeoJSON) as [number, number, number, number];
+  const rawBbox = turf.bbox(geojsonProj as turf.AllGeoJSON) as [
+    number,
+    number,
+    number,
+    number,
+  ];
   const bboxOption = calcBboxOptions(rawBbox, WORLD_BBOX_SIZE, heightFactor);
 
   const { bboxSize } = bboxOption.size;
@@ -143,6 +187,9 @@ export function computeKV(opts: KVOptions): KVResult {
       // near = bboxSize * 0.001 防止近裁剪面切穿地图表面（原始代码用 bboxSize 导致裁剪问题）
       near: bboxSize * 0.001,
       far: 10 * bboxSize,
+      // 缩放限制随地图尺寸动态调整，省级/市级切换后自动更新
+      minDistance: bboxSize * 0.05,
+      maxDistance: bboxSize * 5,
       target,
       position,
       up: cameraUp(pitch, rotation),
@@ -159,9 +206,14 @@ export function computeKV(opts: KVOptions): KVResult {
 /** 用经纬度中心 + zoom 反算投影 bbox，用于初始化场景 */
 export function bboxFromCenter(
   center: [number, number],
-  zoom: number
+  zoom: number,
 ): [number, number, number, number] {
   const [centerX, centerY] = project(center[0], center[1]);
   const halfSize = WORLD_BBOX_SIZE / Math.pow(2, zoom + 1);
-  return [centerX - halfSize, centerY - halfSize, centerX + halfSize, centerY + halfSize];
+  return [
+    centerX - halfSize,
+    centerY - halfSize,
+    centerX + halfSize,
+    centerY + halfSize,
+  ];
 }

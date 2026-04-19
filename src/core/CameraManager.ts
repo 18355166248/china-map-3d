@@ -1,7 +1,7 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import type SizeManager from './SizeManager';
-import type { CameraStatus } from '../geo/camera';
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import type SizeManager from "./SizeManager";
+import type { CameraStatus } from "../geo/camera";
 
 export type CameraInstance = THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
@@ -21,7 +21,12 @@ class CameraManager {
   private canvas: HTMLCanvasElement;
   private isOrthographic: boolean;
 
-  constructor({ sizes, scene, canvas, isOrthographic = false }: CameraManagerOptions) {
+  constructor({
+    sizes,
+    scene,
+    canvas,
+    isOrthographic = false,
+  }: CameraManagerOptions) {
     this.sizes = sizes;
     this.scene = scene;
     this.canvas = canvas;
@@ -39,9 +44,12 @@ class CameraManager {
       // halfViewSize 控制正交相机可视范围，与透视相机视野尽量对齐
       const halfViewSize = 120;
       this.instance = new THREE.OrthographicCamera(
-        -halfViewSize * aspect, halfViewSize * aspect,
-        halfViewSize, -halfViewSize,
-        1, 100000
+        -halfViewSize * aspect,
+        halfViewSize * aspect,
+        halfViewSize,
+        -halfViewSize,
+        1,
+        100000,
       );
     } else {
       this.instance = new THREE.PerspectiveCamera(45, aspect, 1, 100000);
@@ -68,18 +76,21 @@ class CameraManager {
     this.instance.up.set(...status.up);
     this.instance.updateProjectionMatrix();
     this.controls.target.set(...status.target);
+    // 缩放限制随地图层级动态更新，防止缩放过近穿模或过远看不到地图
+    this.controls.minDistance = status.minDistance;
+    this.controls.maxDistance = status.maxDistance;
     this.controls.update();
   }
 
   // O 键切正交，P 键切透视，切换后保持 position 不变（仅改投影方式）
   private bindKeyboard(): void {
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener("keydown", (e) => {
       const currentPosition = this.instance.position.clone();
-      if (e.key === 'o' || e.key === 'O') {
+      if (e.key === "o" || e.key === "O") {
         this.setCamera(true);
         this.instance.position.copy(currentPosition);
         this.instance.updateProjectionMatrix();
-      } else if (e.key === 'p' || e.key === 'P') {
+      } else if (e.key === "p" || e.key === "P") {
         this.setCamera(false);
         this.instance.position.copy(currentPosition);
         this.instance.updateProjectionMatrix();
