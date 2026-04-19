@@ -65,7 +65,7 @@ export class DrillController {
 
   constructor(layer: MapLayer) {
     this.layer = layer;
-    layer.canvas.addEventListener("click", this.onClick);
+    layer.canvas.addEventListener("dblclick", this.onDblClick);
     layer.canvas.addEventListener("contextmenu", this.onRightClick);
   }
 
@@ -74,7 +74,7 @@ export class DrillController {
     this.stack = [level];
   }
 
-  private onClick = async (e: MouseEvent): Promise<void> => {
+  private onDblClick = async (e: MouseEvent): Promise<void> => {
     if (this.animating || !this.stack.length) return;
     const rect = this.layer.canvas.getBoundingClientRect();
     const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -233,7 +233,7 @@ export class DrillController {
   }
 
   dispose(): void {
-    this.layer.canvas.removeEventListener("click", this.onClick);
+    this.layer.canvas.removeEventListener("dblclick", this.onDblClick);
     this.layer.canvas.removeEventListener("contextmenu", this.onRightClick);
   }
 }
