@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import * as turf from "@turf/turf";
 import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2.js";
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
 import MapApplication from "../core/MapApplication";
 import type { BboxOption } from "../geo/camera";
@@ -34,9 +35,10 @@ const SIDE_VERT = /* glsl */ `
 const SIDE_FRAG = /* glsl */ `
   uniform vec3 topColor;
   uniform vec3 bottomColor;
+  uniform float opacity;
   varying vec2 vUv;
   void main() {
-    gl_FragColor = vec4(mix(bottomColor, topColor, vUv.y), 1.0);
+    gl_FragColor = vec4(mix(bottomColor, topColor, vUv.y), opacity);
   }
 `;
 
@@ -127,6 +129,7 @@ export class MapLayer extends MapApplication {
       color: new THREE.Color(topColor),
       metalness: 0.2,
       roughness: 0.6,
+      transparent: true, // 支持淡入淡出动画
     });
     this.topMesh = new THREE.Mesh(topGeo, topMat);
     this.topMesh.scale.z = baseHeight;
@@ -151,7 +154,9 @@ export class MapLayer extends MapApplication {
       uniforms: {
         topColor: { value: new THREE.Color(topColor) },
         bottomColor: { value: new THREE.Color(bottomColor) },
+        opacity: { value: 1.0 }, // 支持淡入淡出动画
       },
+      transparent: true,
     });
     this.sideMesh = new THREE.Mesh(sideGeo, sideMat);
     this.sideMesh.scale.z = baseHeight;
@@ -273,6 +278,44 @@ export class MapLayer extends MapApplication {
     if (old) old.dispose();
     mat[type] = await loadTexture(url);
     mat.needsUpdate = true;
+  }
+
+  /**
+   * 统一设置顶面/侧面/内阴影的透明度，用于钻取动画淡入淡出
+   * opacity=1 时关闭 depthWrite 以外的透明排序问题
+   */
+  setSceneOpacity(opacity: number): void {
+    if (this.topMesh) {
+      const mat = this.topMesh.material as THREE.MeshStandardMaterial;
+      mat.opacity = opacity;
+      mat.depthWrite = opacity >= 1;
+    }
+    if (this.sideMesh) {
+      const mat = this.sideMesh.material as THREE.ShaderMaterial;
+      mat.uniforms.opacity.value = opacity;
+    }
+    if (this.innerShadowMesh) {
+      const mat = this.innerShadowMesh.material as THREE.MeshBasicMaterial;
+      mat.opacity = opacity;
+    }
+    // 边界线：LineMaterial 支持 opacity + transparent
+    if (this.boundaryLines) {
+      for (const line of [this.boundaryLines.top, this.boundaryLines.bottom]) {
+        const mat = line.material as LineMaterial;
+        mat.opacity = opacity;
+        mat.transparent = true;
+      }
+    }
+    // 流光线：同样通过 LineMaterial.opacity 控制
+    if (this.streamerLines) {
+      this.streamerLines.group.traverse((obj) => {
+        const line = obj as Line2;
+        if (line.material instanceof LineMaterial) {
+          line.material.opacity = opacity;
+          line.material.transparent = true;
+        }
+      });
+    }
   }
 
   /**

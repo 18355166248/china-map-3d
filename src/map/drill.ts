@@ -53,8 +53,9 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
+// 三次 easeInOut，比二次更平滑
 function easeInOut(t: number): number {
-  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 export class DrillController {
@@ -110,19 +111,22 @@ export class DrillController {
     const projected = projectGeoJSON(raw) as GeoJSON.FeatureCollection;
     const bboxProj = turf.bbox(projected) as [number, number, number, number];
     const kv = computeKV({ geojsonProj: projected });
-
-    await this.animateCamera(kv.cameraStatus);
-
     const level: DrillLevel = { projected, bboxProj, kv };
-    // minLength 城市级别比省级小，适当降低阈值
+
+    // Phase 1：相机飞行 + 旧 mesh 淡出
+    await this.animateCamera(kv.cameraStatus, { fadeOut: true });
+    // 切换点：重建新 mesh（从透明开始）
     rebuildLayer(this.layer, level, {
       color: "#00ffff",
       linewidth: 2,
       speed: 0.3,
       minLength: 500,
     });
-    this.stack.push(level);
+    this.layer.setSceneOpacity(0);
+    // Phase 2：新 mesh 淡入
+    await this.fadeIn();
 
+    this.stack.push(level);
     this.layer.camera.controls.enabled = true;
     this.animating = false;
   }
@@ -135,28 +139,36 @@ export class DrillController {
     this.stack.pop();
     const prev = this.stack[this.stack.length - 1];
 
-    await this.animateCamera(prev.kv.cameraStatus);
+    // Phase 1：相机飞行 + 旧 mesh 淡出
+    await this.animateCamera(prev.kv.cameraStatus, { fadeOut: true });
+    // 切换点：重建上一层 mesh（从透明开始）
     rebuildLayer(this.layer, prev, {
       color: "#00ffff",
       linewidth: 2,
       speed: 0.3,
       minLength: 2000,
     });
+    this.layer.setSceneOpacity(0);
+    // Phase 2：新 mesh 淡入
+    await this.fadeIn();
 
     this.layer.camera.controls.enabled = true;
     this.animating = false;
   }
 
   /**
-   * 相机飞行动画：在当前位置和目标状态之间 easeInOut 插值
-   * 通过 time.on('tick') 驱动，duration 单位毫秒
+   * 相机飞行动画：easeInOut 插值 + 正弦弧线高度（俯冲感）
+   * fadeOut=true 时同步将场景 opacity 从 1 降到 0
    */
-  private animateCamera(target: CameraStatus, duration = 800): Promise<void> {
+  private animateCamera(
+    target: CameraStatus,
+    opts: { fadeOut?: boolean } = {},
+    duration = 700,
+  ): Promise<void> {
     return new Promise((resolve) => {
       const cam = this.layer.camera.instance;
       const ctrl = this.layer.camera.controls;
 
-      // 记录动画起始状态
       const startPos = cam.position.clone();
       const startTarget = ctrl.target.clone();
       const startNear = cam.near;
@@ -165,26 +177,55 @@ export class DrillController {
 
       const targetPos = new THREE.Vector3(...target.position);
       const targetTarget = new THREE.Vector3(...target.target);
+      // 弧高 = 水平距离的 20%，让相机先拉高再俯冲
+      const distance = startPos.distanceTo(targetPos);
+      const liftHeight = distance * 0.2;
 
       const tick = (): void => {
-        const t = easeInOut(
-          Math.min((performance.now() - startTime) / duration, 1),
-        );
+        const rawT = Math.min((performance.now() - startTime) / duration, 1);
+        const eased = easeInOut(rawT);
 
-        cam.position.lerpVectors(startPos, targetPos, t);
-        ctrl.target.lerpVectors(startTarget, targetTarget, t);
-        cam.near = lerp(startNear, target.near, t);
-        cam.far = lerp(startFar, target.far, t);
+        // xy 用 eased 插值，z 额外叠加正弦弧线
+        cam.position.x = lerp(startPos.x, targetPos.x, eased);
+        cam.position.y = lerp(startPos.y, targetPos.y, eased);
+        cam.position.z =
+          lerp(startPos.z, targetPos.z, eased) +
+          Math.sin(rawT * Math.PI) * liftHeight;
+
+        ctrl.target.lerpVectors(startTarget, targetTarget, eased);
+        cam.near = lerp(startNear, target.near, eased);
+        cam.far = lerp(startFar, target.far, eased);
         cam.up.set(...target.up);
         cam.updateProjectionMatrix();
         ctrl.update();
 
-        if (t >= 1) {
+        // 同步淡出：opacity 从 1 线性降到 0
+        if (opts.fadeOut) {
+          this.layer.setSceneOpacity(1 - rawT);
+        }
+
+        if (rawT >= 1) {
           this.layer.time.off("tick", tick);
           resolve();
         }
       };
 
+      this.layer.time.on("tick", tick);
+    });
+  }
+
+  /** 新 mesh 淡入：opacity 从 0 升到 1 */
+  private fadeIn(duration = 400): Promise<void> {
+    return new Promise((resolve) => {
+      const startTime = performance.now();
+      const tick = (): void => {
+        const t = Math.min((performance.now() - startTime) / duration, 1);
+        this.layer.setSceneOpacity(easeInOut(t));
+        if (t >= 1) {
+          this.layer.time.off("tick", tick);
+          resolve();
+        }
+      };
       this.layer.time.on("tick", tick);
     });
   }
