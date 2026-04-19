@@ -80,7 +80,7 @@ export default function App() {
           { from: [104.07, 30.67], to: [116.4, 39.9] },
         ],
         kv.bboxOption,
-        { color: "#ff6b35", linewidth: 1.5, speed: 0.6 },
+        { color: "#00d4ff", speed: 0.6 },
       );
 
       // 钻取交互：双击省份飞入城市级，右键退回
