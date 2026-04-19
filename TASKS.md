@@ -93,14 +93,14 @@
 
 **方案**：`src/map/texture.ts`，MapLayer 暴露 `setTexture(type, url|tileTemplate)` 方法。
 
-## Step 9 — 钻取交互 `[ ]`
+## Step 9 — 钻取交互 `[x]`
 
 > 参考 `eW.js` drillDown/drillUp
 
-- [ ] Raycaster 鼠标点击检测（topMesh）
-- [ ] drillStack 历史栈
-- [ ] 按 parentCode 过滤子区域数据
-- [ ] 相机动画过渡（TWEEN 或手写插值）
+- [x] Raycaster 鼠标点击检测（topMesh）
+- [x] drillStack 历史栈
+- [x] 按 adcode 动态加载子区域数据（`/json/{adcode}-city.json`）
+- [x] 相机动画过渡（弧线飞行 + 淡入淡出）
 
 **方案**：`src/map/drill.ts` 实现 DrillController，注入 MapLayer。
 
