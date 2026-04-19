@@ -76,6 +76,8 @@ export class DrillController {
 
   private onDblClick = async (e: MouseEvent): Promise<void> => {
     if (this.animating || !this.stack.length) return;
+    // 最深三级（省→市→县），县级不再往下钻
+    if (this.stack.length >= 3) return;
     const rect = this.layer.canvas.getBoundingClientRect();
     const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -93,8 +95,9 @@ export class DrillController {
   };
 
   private async drillDown(adcode: number): Promise<void> {
-    // 动态路径：public/json/{adcode}-city.json，文件不存在时 fetch 返回 404 静默跳过
-    const url = `/json/${adcode}-city.json`;
+    // 根据当前层级决定加载后缀：depth=1 → city，depth=2 → county
+    const suffix = this.stack.length === 1 ? "city" : "county";
+    const url = `/json/${adcode}-${suffix}.json`;
     if (this.animating) return;
     this.animating = true;
     this.layer.camera.controls.enabled = false;
@@ -103,7 +106,7 @@ export class DrillController {
     try {
       raw = await loadGeoJSON(url);
     } catch {
-      // 该省暂无城市数据（如台湾），静默跳过
+      // 无对应数据（直辖市区县、特别行政区等），静默跳过
       this.layer.camera.controls.enabled = true;
       this.animating = false;
       return;
@@ -116,11 +119,13 @@ export class DrillController {
     // Phase 1：相机飞行 + 旧 mesh 淡出
     await this.animateCamera(kv.cameraStatus, { fadeOut: true });
     // 切换点：重建新 mesh（从透明开始）
+    // 县级 minLength 更小，城市级居中
+    const minLength = suffix === "county" ? 100 : 500;
     rebuildLayer(this.layer, level, {
       color: "#00ffff",
       linewidth: 2,
       speed: 0.3,
-      minLength: 500,
+      minLength,
     });
     this.layer.setSceneOpacity(0);
     // Phase 2：新 mesh 淡入

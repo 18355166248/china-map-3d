@@ -114,15 +114,13 @@
 
 **方案**：`CameraStatus` 新增 `minDistance`/`maxDistance`，`computeKV` 按 `bboxSize * 0.05/5` 计算，`applyStatus` 和动画结束时应用。
 
-## Step 11 — 县级钻取 `[ ]`
+## Step 11 — 县级钻取 `[x]`
 
-> 在城市级基础上再往下一层，支持点击城市进入县级视图
+- [x] 下载所有城市的县级 GeoJSON（359 个城市，`{cityAdcode}-county.json`）
+- [x] DrillController 支持三级栈（省 → 市 → 县），depth 决定加载后缀
+- [x] 县级 minLength=100，城市级 minLength=500
 
-- [ ] 下载所有城市的县级 GeoJSON（`{cityAdcode}_full.json`）
-- [ ] DrillController 支持三级栈（省 → 市 → 县）
-- [ ] 县级 minLength 阈值调整
-
-**方案**：扩展 `scripts/download-provinces.mjs` 下载县级数据；DrillController 逻辑复用，无需大改。
+**方案**：`scripts/download-counties.mjs` 批量下载；DrillController 用 `stack.length` 判断层级，depth≥3 禁止继续钻取。
 
 ## Step 12 — 省份 Hover 高亮 `[ ]`
 
