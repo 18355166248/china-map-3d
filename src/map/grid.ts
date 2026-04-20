@@ -90,10 +90,10 @@ export class GridBackground {
     gridHelper.renderOrder = -2;
     this.group.add(gridHelper);
 
-    // ── 层2：交叉点加号形状 ──────────────────────────────────────────
-    const shapeMesh = this.buildShapes(gridSize, division, shapeColor);
-    shapeMesh.renderOrder = -1;
-    this.group.add(shapeMesh);
+    // ── 层2：交叉点加号形状（已移除，减少视觉噪音）──────────────────
+    // const shapeMesh = this.buildShapes(gridSize, division, shapeColor);
+    // shapeMesh.renderOrder = -1;
+    // this.group.add(shapeMesh);
 
     // ── 层3：点阵 + 扩散光环 ─────────────────────────────────────────
     const points = this.buildPoints(
