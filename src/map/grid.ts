@@ -6,7 +6,7 @@ import type { BboxOption } from "../geo/camera";
 export interface GridStyle {
   /** 网格分区数，默认 20 */
   division?: number;
-  /** 网格线颜色，默认 #1b4b70 */
+  /** 网格线颜色，默认 #2a5f8a */
   gridColor?: number;
   /** 加号形状颜色，默认 #2a5f8a */
   shapeColor?: number;
@@ -53,7 +53,7 @@ export class GridBackground {
   private build(bboxOption: BboxOption, style: GridStyle, rotation: number): void {
     const {
       division = 20,
-      gridColor = 0x1b4b70,
+      gridColor = 0x2a5f8a,
       shapeColor = 0x2a5f8a,
       pointColor = 0x154d7d,
       pointSizeRatio = 0.002,
