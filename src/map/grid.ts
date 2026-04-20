@@ -14,7 +14,7 @@ export interface GridStyle {
   pointColor?: number;
   /** 点大小（相对 gridSize），默认 0.002 */
   pointSizeRatio?: number;
-  /** 点阵行列数，默认 100 */
+  /** 点阵行列数，默认 60 */
   pointCount?: number;
   /** 扩散光环颜色，默认 #2e8bd9 */
   diffuseColor?: number;
@@ -57,7 +57,7 @@ export class GridBackground {
       shapeColor = 0x2a5f8a,
       pointColor = 0x154d7d,
       pointSizeRatio = 0.002,
-      pointCount = 100,
+      pointCount = 60,
       diffuseColor = 0x2e8bd9,
       diffuseSpeed = 0.4,
       diffuseWidthRatio = 0.08,
