@@ -203,6 +203,7 @@ export class MapLayer extends MapApplication {
   /**
    * 添加流光动画线（叠加在边界线上方）
    * 通过 TimeManager tick 事件每帧驱动 dashOffset，无需外部手动调用
+   * 默认启用优化版本（optimized: true），将所有 ring 合并为单个 draw call
    */
   addStreamer(
     geojson: GeoJSON.FeatureCollection,
@@ -214,7 +215,7 @@ export class MapLayer extends MapApplication {
       geojson,
       bboxOption,
       this.sizes,
-      style,
+      { optimized: true, ...style }, // 默认启用优化版本
     );
     this.scene.add(this.streamerLines.group);
 

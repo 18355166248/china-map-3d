@@ -3,6 +3,7 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import type { BboxOption } from '../geo/camera';
+import { buildStreamerLinesOptimized } from './streamer-optimized';
 
 export interface StreamerStyle {
   color?: string;       // 流光颜色
@@ -11,6 +12,7 @@ export interface StreamerStyle {
   opacity?: number;     // 不透明度
   dashRatio?: number;   // 亮段占环周长比例（0~1，默认 0.05 即 5%）
   minLength?: number;   // 环周长最小阈值，低于此值跳过（过滤掉太小的岛屿/飞地）
+  optimized?: boolean;  // 是否使用优化版本（合并几何，减少 draw call）
 }
 
 export interface StreamerLines {
@@ -77,6 +79,11 @@ function ringLength(positions: number[]): number {
  *  - 每帧 dashOffset 减少一个 totalSize × speed × dt 的比例，亮点沿环移动
  *  - 因为 dashSize + gapSize 等于周长，亮点正好绕环循环不重叠
  *
+ * 性能优化：
+ *  - 设置 optimized: true 使用优化版本，将所有 ring 合并为单个 LineSegments
+ *  - 优化版本通过 shader attribute 控制每个 ring 的独立动画
+ *  - 34 个省份从 34 个 draw call 降低到 1 个 draw call
+ *
  * @param geojson    已投影的 GeoJSON（Mercator 坐标）
  * @param bboxOption computeKV 输出，用于获取 baseHeight
  * @param sizes      canvas 宽高，LineMaterial 计算像素线宽需要
@@ -88,6 +95,12 @@ export function buildStreamerLines(
   sizes: { width: number; height: number },
   style: StreamerStyle = {}
 ): StreamerLines {
+  // 使用优化版本
+  if (style.optimized) {
+    return buildStreamerLinesOptimized(geojson, bboxOption, sizes, style);
+  }
+
+  // 原始版本（兼容性保留）
   const {
     color = '#00ffff',
     linewidth = 2,

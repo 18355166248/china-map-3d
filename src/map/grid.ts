@@ -54,7 +54,6 @@ export class GridBackground {
     const {
       division = 20,
       gridColor = 0x2a5f8a,
-      shapeColor = 0x2a5f8a,
       pointColor = 0x154d7d,
       pointSizeRatio = 0.002,
       pointCount = 60,
