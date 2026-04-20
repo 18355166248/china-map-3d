@@ -2,10 +2,10 @@ import * as THREE from "three";
 import type { BboxOption } from "../geo/camera";
 
 export interface InnerShadowStyle {
-  shadowColor?: string; // 阴影颜色
-  shadowBlur?: number;  // 阴影模糊半径（canvas 像素）
-  resolution?: number;  // canvas 长边分辨率，越大越清晰但越慢
-  debug?: boolean;      // 开启后自动下载调试图片
+  shadowColor?: string;     // 阴影颜色
+  shadowBlurRatio?: number; // 阴影模糊半径占 canvas 短边的比例（0~1，默认 0.025 即 2.5%）
+  resolution?: number;      // canvas 长边分辨率，越大越清晰但越慢
+  debug?: boolean;          // 开启后自动下载调试图片
 }
 
 /**
@@ -28,7 +28,7 @@ export function buildInnerShadowTexture(
 ): THREE.Texture {
   const {
     shadowColor = "rgba(255,255,255,1)",
-    shadowBlur = 50,
+    shadowBlurRatio = 0.025, // 默认 2.5% 短边
     resolution = 2000,
     debug = false,
   } = style;
@@ -41,6 +41,9 @@ export function buildInnerShadowTexture(
   // 长边为 resolution，短边按宽高比缩放，保持投影坐标比例
   const canvasW = aspect >= 1 ? resolution : Math.round(resolution * aspect);
   const canvasH = aspect >= 1 ? Math.round(resolution / aspect) : resolution;
+
+  // 根据 canvas 短边动态计算 shadowBlur，确保小图和大图的阴影宽度等比
+  const shadowBlur = Math.min(canvasW, canvasH) * shadowBlurRatio;
 
   const canvas = document.createElement("canvas");
   canvas.width = canvasW;

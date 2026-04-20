@@ -11,7 +11,18 @@
       "Read(//f/FrontEnd/Code/3DMap-zhejiang/packages/threejs-demo/src/examples/**)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(npx prettier *)"
+      "Bash(npx prettier *)",
+      "Bash(npm run *)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_console_messages",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "Bash(git restore *)",
+      "Bash(npx playwright *)",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Bash(git reset *)",
+      "Bash(curl -s http://localhost:5173)"
     ]
   }
 }
