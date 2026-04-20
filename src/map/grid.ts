@@ -18,7 +18,7 @@ export interface GridStyle {
   pointCount?: number;
   /** 扩散光环颜色，默认 #2e8bd9 */
   diffuseColor?: number;
-  /** 扩散速度（gridSize/s），默认 0.4 */
+  /** 扩散速度（gridSize/s），默认 0.7 */
   diffuseSpeed?: number;
   /** 扩散光环宽度（相对 gridSize），默认 0.08 */
   diffuseWidthRatio?: number;
@@ -59,7 +59,7 @@ export class GridBackground {
       pointSizeRatio = 0.002,
       pointCount = 60,
       diffuseColor = 0x2e8bd9,
-      diffuseSpeed = 0.4,
+      diffuseSpeed = 0.7,
       diffuseWidthRatio = 0.08,
     } = style;
 
