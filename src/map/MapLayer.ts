@@ -223,14 +223,8 @@ export class MapLayer extends MapApplication {
       this.sizes,
       style,
     );
-    this.scene.add(this.boundaryLines.top, this.boundaryLines.bottom);
-
-    // 注册 LOD 对象
-    if (this.lodManager) {
-      this.lodManager.register({
-        boundaryBottom: this.boundaryLines.bottom,
-      });
-    }
+    // 只添加顶部边界线，不添加底部边界线
+    this.scene.add(this.boundaryLines.top);
   }
 
   /**
