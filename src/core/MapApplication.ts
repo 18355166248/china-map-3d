@@ -48,6 +48,7 @@ class MapApplication extends EventEmitter {
 
     this.time.on("tick", () => {
       this.camera.update();
+      this.emit("beforeRender"); // 供子类在渲染前执行逻辑（如 LOD 更新）
       this.renderer.update();
     });
   }

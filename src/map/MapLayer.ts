@@ -21,6 +21,7 @@ import {
   type StreamerLines,
 } from "./streamer";
 import { loadTexture, type TextureType } from "./texture";
+import { LODManager, type LODConfig } from "./lod";
 
 // 侧面顶点着色器：透传 uv，用于片元着色器做顶底渐变
 const SIDE_VERT = /* glsl */ `
@@ -45,6 +46,7 @@ const SIDE_FRAG = /* glsl */ `
 export interface MapLayerOptions {
   topColor?: string;
   bottomColor?: string;
+  lod?: LODConfig; // LOD 配置
 }
 
 export class MapLayer extends MapApplication {
@@ -58,6 +60,10 @@ export class MapLayer extends MapApplication {
   // 流光线对象，tick 事件驱动 dashOffset 动画
   private streamerLines?: StreamerLines;
 
+  // LOD 管理器
+  private lodManager?: LODManager;
+  private sceneCenter = new THREE.Vector3(0, 0, 0);
+
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
 
@@ -66,6 +72,13 @@ export class MapLayer extends MapApplication {
     const dir = new THREE.DirectionalLight(0xffffff, 1.0);
     dir.position.set(0, 0, 1).normalize();
     this.scene.add(ambient, dir);
+
+    // 每帧渲染前更新 LOD
+    this.on("beforeRender", () => {
+      if (this.lodManager) {
+        this.lodManager.update(this.camera.instance, this.sceneCenter);
+      }
+    });
 
     // resize 时更新边界线和流光线分辨率，LineMaterial 依赖此值计算像素线宽
     this.sizes.on("resize", () => {
@@ -135,6 +148,12 @@ export class MapLayer extends MapApplication {
     this.topMesh.scale.z = baseHeight;
     this.topMesh.name = "map-top";
 
+    // 初始化 LOD 管理器
+    if (opts.lod) {
+      this.lodManager = new LODManager(opts.lod);
+      this.sceneCenter.set(0, 0, baseHeight / 2);
+    }
+
     // 内阴影层：复用顶面几何，略高于顶面（1.01x）避免 z-fighting
     // opacity 初始为 0，调用 applyInnerShadow 后生效
     const shadowMat = new THREE.MeshBasicMaterial({
@@ -164,6 +183,13 @@ export class MapLayer extends MapApplication {
     this.sideMesh.name = "map-side";
 
     this.scene.add(this.topMesh, this.innerShadowMesh, this.sideMesh);
+
+    // 注册 LOD 对象
+    if (this.lodManager) {
+      this.lodManager.register({
+        innerShadowMesh: this.innerShadowMesh,
+      });
+    }
   }
 
   // 生成内阴影纹理并贴到 innerShadowMesh 上，首次调用前 mesh 不可见
@@ -198,6 +224,13 @@ export class MapLayer extends MapApplication {
       style,
     );
     this.scene.add(this.boundaryLines.top, this.boundaryLines.bottom);
+
+    // 注册 LOD 对象
+    if (this.lodManager) {
+      this.lodManager.register({
+        boundaryBottom: this.boundaryLines.bottom,
+      });
+    }
   }
 
   /**
@@ -220,7 +253,20 @@ export class MapLayer extends MapApplication {
     this.scene.add(this.streamerLines.group);
 
     // 注册 tick 监听，每帧推进 dashOffset 产生流动效果
+    const originalTick = this.streamerLines.tick;
+    this.streamerLines.tick = (dt: number) => {
+      // 应用 LOD 速度因子
+      const speedFactor = this.lodManager?.getStreamerSpeedFactor(this.camera.instance, this.sceneCenter) ?? 1.0;
+      originalTick(dt * speedFactor);
+    };
     this.time.on("tick", this.streamerLines.tick);
+
+    // 注册 LOD 对象
+    if (this.lodManager) {
+      this.lodManager.register({
+        streamerGroup: this.streamerLines.group,
+      });
+    }
   }
 
   // 销毁流光线并解除 tick 监听
