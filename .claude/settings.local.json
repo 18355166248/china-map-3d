@@ -22,7 +22,10 @@
       "mcp__plugin_playwright_playwright__browser_evaluate",
       "mcp__plugin_playwright_playwright__browser_close",
       "Bash(git reset *)",
-      "Bash(curl -s http://localhost:5173)"
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(open *)",
+      "Skill(browse)",
+      "Bash(lsof *)"
     ]
   }
 }

@@ -9,7 +9,8 @@ import { LabelController } from "./map/label";
 import { HighlightController } from "./map/highlight";
 import { FlylineController } from "./map/flyline";
 import { ParticleController } from "./map/particle";
-import { buildTileTexture } from "./map/tileTexture";
+import { buildGradientTexture } from "./map/gradientTexture";
+import { buildTerrainTexture } from "./map/terrainTexture";
 import { GridBackground } from "./map/grid";
 import * as turf from "@turf/turf";
 import "./App.css";
@@ -76,13 +77,25 @@ export default function App() {
         minLength: 2000,
       });
 
-      // 纹理贴图：拼接天地图卫星瓦片，失败时静默降级（保留纯色）
-      try {
-        const tileTexture = await buildTileTexture(bboxProj);
-        layer.applyTextureObject("map", tileTexture, true);
-      } catch (e) {
-        console.warn("天地图瓦片加载失败，使用纯色", e);
-      }
+      // 渐变纹理：径向渐变，中心亮蓝 → 边缘深蓝，科技感配色
+      const gradientTexture = buildGradientTexture(kv.bboxOption, {
+        type: "radial",
+        colors: ["#3a7db0", "#2a6496", "#1a4d7a"],
+        resolution: 2000,
+      });
+      layer.applyTextureObject("map", gradientTexture, true);
+
+      // 地形法线贴图：从 Mapzen Terrarium 瓦片服务加载真实地形数据
+      // Terrarium 格式：RGB 编码高度 (height = (R * 256 + G + B / 256) - 32768)
+      const terrainTexture = await buildTerrainTexture(kv.bboxOption, {
+        type: "tile",
+        tileUrl:
+          "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
+        normalScale: 1.0, // 法线强度
+        resolution: 2048,
+      });
+      console.log("地形法线贴图加载完成:", terrainTexture);
+      layer.applyTextureObject("normalMap", terrainTexture, false);
 
       // 飞线示例（北京→上海→广州→成都→北京）
       flylines = new FlylineController(layer);
@@ -99,21 +112,38 @@ export default function App() {
 
       // 地图表面漂浮粒子
       particles = new ParticleController(layer);
-      particles.setData(kv.bboxOption, { color: "#00d4ff", count: 150, sizeMin: 300, sizeMax: 500 });
+      particles.setData(kv.bboxOption, {
+        color: "#00d4ff",
+        count: 150,
+        sizeMin: 300,
+        sizeMax: 500,
+      });
 
       // 钻取交互：双击省份飞入城市级，右键退回
       drill = new DrillController(layer);
       labels = new LabelController(layer.scene);
       highlight = new HighlightController(layer);
 
-      // 钻取时同步更新瓦片纹理，失败静默降级
+      // 钻取时同步更新渐变纹理和地形法线贴图
       drill.onAfterRebuild = async (drillBboxProj) => {
-        try {
-          const tex = await buildTileTexture(drillBboxProj);
-          layer.applyTextureObject("map", tex, true);
-        } catch (e) {
-          console.warn("钻取瓦片加载失败", e);
-        }
+        const bboxOption = { ...kv.bboxOption, bboxProj: drillBboxProj };
+
+        const tex = buildGradientTexture(bboxOption, {
+          type: "radial",
+          colors: ["#3a7db0", "#2a6496", "#1a4d7a"],
+          resolution: 2000,
+        });
+        layer.applyTextureObject("map", tex, true);
+
+        // 同步更新地形法线贴图
+        const terrainTex = await buildTerrainTexture(bboxOption, {
+          type: "tile",
+          tileUrl:
+            "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
+          normalScale: 1.0,
+          resolution: 2048,
+        });
+        layer.applyTextureObject("normalMap", terrainTex, false);
       };
 
       // 层级切换时同步更新标注和高亮

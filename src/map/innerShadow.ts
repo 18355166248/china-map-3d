@@ -2,10 +2,10 @@ import * as THREE from "three";
 import type { BboxOption } from "../geo/camera";
 
 export interface InnerShadowStyle {
-  shadowColor?: string;     // 阴影颜色
+  shadowColor?: string; // 阴影颜色
   shadowBlurRatio?: number; // 阴影模糊半径占 canvas 短边的比例（0~1，默认 0.025 即 2.5%）
-  resolution?: number;      // canvas 长边分辨率，越大越清晰但越慢
-  debug?: boolean;          // 开启后自动下载调试图片
+  resolution?: number; // canvas 长边分辨率，越大越清晰但越慢
+  debug?: boolean; // 开启后自动下载调试图片
 }
 
 /**
@@ -27,8 +27,8 @@ export function buildInnerShadowTexture(
   style: InnerShadowStyle = {},
 ): THREE.Texture {
   const {
-    shadowColor = "rgba(255,255,255,1)",
-    shadowBlurRatio = 0.025, // 默认 2.5% 短边
+    shadowColor = "rgba(0,212,255,0.8)", // 青色半透明，与科技蓝主题协调
+    shadowBlurRatio = 0.05, // 默认 5% 短边，增强阴影宽度（参考项目用 10%）
     resolution = 2000,
     debug = false,
   } = style;
@@ -82,12 +82,12 @@ export function buildInnerShadowTexture(
   const pad = shadowBlur * 10;
   ctx.beginPath();
   ctx.rect(-pad, -pad, canvasW + pad * 2, canvasH + pad * 2); // 外部大矩形
-  addAllPaths();                   // 多边形路径作为 evenodd 孔洞
+  addAllPaths(); // 多边形路径作为 evenodd 孔洞
   ctx.shadowColor = shadowColor;
   ctx.shadowBlur = shadowBlur;
   ctx.fillStyle = "rgba(0,0,0,1)"; // 必须不透明，否则阴影强度不足
-  ctx.fill("evenodd");             // 多边形外部被填充，阴影向内渗
-  ctx.restore();                   // restore 同时重置 shadowBlur/shadowColor
+  ctx.fill("evenodd"); // 多边形外部被填充，阴影向内渗
+  ctx.restore(); // restore 同时重置 shadowBlur/shadowColor
 
   // Step 2: destination-in 裁剪，只保留多边形内部的阴影像素
   ctx.save();

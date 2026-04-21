@@ -64,13 +64,18 @@ export class MapLayer extends MapApplication {
   private lodManager?: LODManager;
   private sceneCenter = new THREE.Vector3(0, 0, 0);
 
+  // 公开访问顶面网格，用于调试和材质检查
+  get topMeshInstance() {
+    return this.topMesh;
+  }
+
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
 
-    // 环境光保证整体亮度，方向光从正上方照射突出顶面
-    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-    dir.position.set(0, 0, 1).normalize();
+    // 环境光保证整体亮度，方向光从斜上方照射以突出法线贴图的凹凸效果
+    const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+    dir.position.set(1, 1, 2).normalize(); // 斜向光照，增强地形凹凸感
     this.scene.add(ambient, dir);
 
     // 每帧渲染前更新 LOD
@@ -113,8 +118,8 @@ export class MapLayer extends MapApplication {
     this.clearMeshes();
 
     const { baseHeight } = bboxOption;
-    const topColor = opts.topColor ?? "#2a6496";
-    const bottomColor = opts.bottomColor ?? "#0d2137";
+    const topColor = opts.topColor ?? "#4a8dc7"; // 更亮的蓝色，增强顶部高光
+    const bottomColor = opts.bottomColor ?? "#0a1929"; // 更深的深蓝，增强对比度
 
     // group 格式：[groupId, indexLen, vertexCount, groupId, indexLen, ...]
     // group[1]/group[2] 对应顶面，group[4] 对应侧面索引数量
@@ -140,8 +145,9 @@ export class MapLayer extends MapApplication {
     const topGeo = toBufferGeometry(topData);
     const topMat = new THREE.MeshStandardMaterial({
       color: new THREE.Color(topColor),
-      metalness: 0.2,
-      roughness: 0.6,
+      metalness: 0.1, // 减少金属感，更适合渐变纹理
+      roughness: 0.7, // 增加粗糙度，减少高光反射
+      normalScale: new THREE.Vector2(1.5, 1.5), // 增大法线贴图强度，增强地形凹凸效果
       transparent: true, // 支持淡入淡出动画
     });
     this.topMesh = new THREE.Mesh(topGeo, topMat);
@@ -160,6 +166,8 @@ export class MapLayer extends MapApplication {
       transparent: true,
       opacity: 0,
       depthWrite: false,
+      blending: THREE.MultiplyBlending, // 正片叠底混合，保留底层光照效果
+      premultipliedAlpha: true, // MultiplyBlending 要求预乘 alpha
     });
     this.innerShadowMesh = new THREE.Mesh(topGeo, shadowMat);
     this.innerShadowMesh.scale.z = 1.01 * baseHeight;
@@ -250,7 +258,11 @@ export class MapLayer extends MapApplication {
     const originalTick = this.streamerLines.tick;
     this.streamerLines.tick = (dt: number) => {
       // 应用 LOD 速度因子
-      const speedFactor = this.lodManager?.getStreamerSpeedFactor(this.camera.instance, this.sceneCenter) ?? 1.0;
+      const speedFactor =
+        this.lodManager?.getStreamerSpeedFactor(
+          this.camera.instance,
+          this.sceneCenter,
+        ) ?? 1.0;
       originalTick(dt * speedFactor);
     };
     this.time.on("tick", this.streamerLines.tick);
