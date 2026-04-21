@@ -25,7 +25,8 @@
       "Bash(curl -s http://localhost:5173)",
       "Bash(open *)",
       "Skill(browse)",
-      "Bash(lsof *)"
+      "Bash(lsof *)",
+      "Bash(xargs kill *)"
     ]
   }
 }

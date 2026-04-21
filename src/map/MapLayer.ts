@@ -166,8 +166,6 @@ export class MapLayer extends MapApplication {
       transparent: true,
       opacity: 0,
       depthWrite: false,
-      blending: THREE.MultiplyBlending, // 正片叠底混合，保留底层光照效果
-      premultipliedAlpha: true, // MultiplyBlending 要求预乘 alpha
     });
     this.innerShadowMesh = new THREE.Mesh(topGeo, shadowMat);
     this.innerShadowMesh.scale.z = 1.01 * baseHeight;
