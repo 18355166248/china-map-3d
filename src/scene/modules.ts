@@ -9,6 +9,7 @@ import type {
   MapLevelName,
   MapSceneConfig,
   MapSceneModule,
+  SceneModuleKey,
 } from "./types";
 
 type GridModuleConfig = Exclude<
@@ -31,7 +32,7 @@ function getLevelStyle<T>(
 }
 
 export class GridModule implements MapSceneModule {
-  key = "grid";
+  key: SceneModuleKey = "grid";
   private grid?: GridBackground;
   private config: GridModuleConfig;
 
@@ -66,7 +67,7 @@ export class GridModule implements MapSceneModule {
 }
 
 export class LabelModule implements MapSceneModule {
-  key = "labels";
+  key: SceneModuleKey = "labels";
   private labels: LabelController;
   private config: NonNullable<MapSceneConfig["labels"]>;
 
@@ -99,7 +100,7 @@ export class LabelModule implements MapSceneModule {
 }
 
 export class HighlightModule implements MapSceneModule {
-  key = "highlight";
+  key: SceneModuleKey = "highlight";
   private highlight: HighlightController;
   private config: NonNullable<MapSceneConfig["highlight"]>;
 
@@ -126,7 +127,7 @@ export class HighlightModule implements MapSceneModule {
 }
 
 export class FlylineModule implements MapSceneModule {
-  key = "flylines";
+  key: SceneModuleKey = "flylines";
   private flylines: FlylineController;
   private config: NonNullable<MapSceneConfig["flylines"]>;
 
@@ -160,7 +161,7 @@ export class FlylineModule implements MapSceneModule {
 }
 
 export class ParticleModule implements MapSceneModule {
-  key = "particles";
+  key: SceneModuleKey = "particles";
   private particles: ParticleController;
   private config: NonNullable<MapSceneConfig["particles"]>;
 

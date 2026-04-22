@@ -9,6 +9,9 @@ import { buildMergedBoundary } from "./mergedBoundary";
 import type { StreamerStyle } from "./streamer";
 
 export interface DrillLevel {
+  adcode?: number;
+  sourceUrl?: string;
+  cacheKey?: string;
   projected: GeoJSON.FeatureCollection;
   bboxProj: [number, number, number, number];
   kv: KVResult;
@@ -17,6 +20,11 @@ export interface DrillLevel {
 export interface DrillControllerOptions {
   maxDepth?: number;
   boundaryStyle?: BoundaryStyle;
+  loadLevel?: (
+    adcode: number,
+    suffix: "city" | "county",
+    depth: number,
+  ) => Promise<DrillLevel | null>;
   getDataUrl?: (
     adcode: number,
     suffix: "city" | "county",
@@ -49,9 +57,15 @@ const DEFAULT_BOUNDARY_STYLE: BoundaryStyle = {
 export class DrillController {
   private layer: MapLayer;
   private options: Required<
-    Pick<DrillControllerOptions, "maxDepth" | "getDataUrl" | "getStreamerStyle">
+    Pick<
+      DrillControllerOptions,
+      "maxDepth" | "getDataUrl" | "getStreamerStyle"
+    >
   > &
-    Pick<DrillControllerOptions, "boundaryStyle" | "rebuildLevel">;
+    Pick<
+      DrillControllerOptions,
+      "boundaryStyle" | "rebuildLevel" | "loadLevel"
+    >;
   private stack: DrillLevel[] = [];
   private animating = false;
 
@@ -74,6 +88,7 @@ export class DrillController {
       maxDepth: options.maxDepth ?? 3,
       boundaryStyle: options.boundaryStyle,
       rebuildLevel: options.rebuildLevel,
+      loadLevel: options.loadLevel,
       getDataUrl:
         options.getDataUrl ??
         ((adcode, suffix) => `/json/${adcode}-${suffix}.json`),
@@ -123,24 +138,38 @@ export class DrillController {
     this.layer.camera.controls.enabled = false;
     this.onLoadingChange?.(true);
 
-    let raw: GeoJSON.FeatureCollection;
+    let level: DrillLevel | null = null;
     try {
-      raw = await loadGeoJSON(url);
+      if (this.options.loadLevel) {
+        level = await this.options.loadLevel(adcode, suffix, this.stack.length);
+      } else {
+        const raw = await loadGeoJSON(url);
+        const projected = projectGeoJSON(raw) as GeoJSON.FeatureCollection;
+        const bboxProj = turf.bbox(projected) as [
+          number,
+          number,
+          number,
+          number,
+        ];
+        const kv = computeKV({ geojsonProj: projected });
+        level = { projected, bboxProj, kv };
+      }
     } catch {
       this.onLoadingChange?.(false);
       this.layer.camera.controls.enabled = true;
       this.animating = false;
       return;
     }
-
-    const projected = projectGeoJSON(raw) as GeoJSON.FeatureCollection;
-    const bboxProj = turf.bbox(projected) as [number, number, number, number];
-    const kv = computeKV({ geojsonProj: projected });
-    const level: DrillLevel = { projected, bboxProj, kv };
+    if (!level) {
+      this.onLoadingChange?.(false);
+      this.layer.camera.controls.enabled = true;
+      this.animating = false;
+      return;
+    }
     const nextDepth = this.stack.length + 1;
 
     try {
-      this.layer.camera.applyStatus(kv.cameraStatus);
+      this.layer.camera.applyStatus(level.kv.cameraStatus);
       await this.rebuildLevel(level, {
         depth: nextDepth,
         direction: "down",

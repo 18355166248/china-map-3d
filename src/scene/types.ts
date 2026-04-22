@@ -17,10 +17,19 @@ export interface LevelState {
   name: MapLevelName;
   depth: number;
   adcode?: number;
+  sourceUrl: string;
+  cacheKey: string;
   projected: GeoJSON.FeatureCollection;
   bboxOption: BboxOption;
   bboxProj: [number, number, number, number];
 }
+
+export type SceneModuleKey =
+  | "grid"
+  | "labels"
+  | "highlight"
+  | "flylines"
+  | "particles";
 
 export interface LevelStyleConfig<T> {
   enabled?: boolean;
@@ -76,6 +85,10 @@ export type NormalTextureConfig =
   | NormalTextureNoneConfig;
 
 export interface MapSceneConfig {
+  debug?: {
+    perf?: boolean;
+    cache?: boolean;
+  };
   data: {
     rootUrl: string;
     drill?: {
@@ -129,8 +142,7 @@ export interface MapSceneConfig {
 }
 
 export interface MapSceneModule {
-  key: string;
+  key: SceneModuleKey;
   onLevelChange?(level: LevelState): void | Promise<void>;
   dispose(): void;
 }
-
