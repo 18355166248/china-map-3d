@@ -5,6 +5,10 @@ import SizeManager from "./SizeManager";
 import CameraManager from "./CameraManager";
 import Renderer from "./Renderer";
 
+interface MapApplicationEvents {
+  beforeRender: [];
+}
+
 /**
  * 场景基类，组合各管理器并建立事件驱动的渲染循环
  * 业务层（MapLayer 等）继承此类，专注于 Mesh 管理
@@ -14,7 +18,7 @@ import Renderer from "./Renderer";
  * 窗口变化：
  *   SizeManager.resize → CameraManager.resize → Renderer.resize
  */
-class MapApplication extends EventEmitter {
+class MapApplication extends EventEmitter<MapApplicationEvents> {
   scene: THREE.Scene;
   camera: CameraManager;
   renderer: Renderer;

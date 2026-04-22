@@ -47,6 +47,11 @@ export interface MapLayerOptions {
   topColor?: string;
   bottomColor?: string;
   lod?: LODConfig; // LOD 配置
+  topMaterial?: {
+    metalness?: number;
+    roughness?: number;
+    normalScale?: number | [number, number];
+  };
 }
 
 export class MapLayer extends MapApplication {
@@ -120,6 +125,16 @@ export class MapLayer extends MapApplication {
     const { baseHeight } = bboxOption;
     const topColor = opts.topColor ?? "#4a8dc7"; // 更亮的蓝色，增强顶部高光
     const bottomColor = opts.bottomColor ?? "#0a1929"; // 更深的深蓝，增强对比度
+    const topMaterial = opts.topMaterial ?? {};
+    const resolvedNormalScale = Array.isArray(topMaterial.normalScale)
+      ? new THREE.Vector2(
+          topMaterial.normalScale[0],
+          topMaterial.normalScale[1],
+        )
+      : new THREE.Vector2(
+          topMaterial.normalScale ?? 1.5,
+          topMaterial.normalScale ?? 1.5,
+        );
 
     // group 格式：[groupId, indexLen, vertexCount, groupId, indexLen, ...]
     // group[1]/group[2] 对应顶面，group[4] 对应侧面索引数量
@@ -145,9 +160,9 @@ export class MapLayer extends MapApplication {
     const topGeo = toBufferGeometry(topData);
     const topMat = new THREE.MeshStandardMaterial({
       color: new THREE.Color(topColor),
-      metalness: 0.1, // 减少金属感，更适合渐变纹理
-      roughness: 0.7, // 增加粗糙度，减少高光反射
-      normalScale: new THREE.Vector2(1.5, 1.5), // 增大法线贴图强度，增强地形凹凸效果
+      metalness: topMaterial.metalness ?? 0.1, // 减少金属感，更适合渐变纹理
+      roughness: topMaterial.roughness ?? 0.7, // 增加粗糙度，减少高光反射
+      normalScale: resolvedNormalScale, // 增大法线贴图强度，增强地形凹凸效果
       transparent: true, // 支持淡入淡出动画
     });
     this.topMesh = new THREE.Mesh(topGeo, topMat);
@@ -346,6 +361,18 @@ export class MapLayer extends MapApplication {
     if (old) old.dispose();
     mat[type] = texture;
     if (resetColor) mat.color.set(0xffffff);
+    mat.needsUpdate = true;
+  }
+
+  /**
+   * 清理顶面上的纹理引用，供配置切换时显式关闭某个贴图通道。
+   */
+  clearTexture(type: TextureType): void {
+    if (!this.topMesh) return;
+    const mat = this.topMesh.material as THREE.MeshStandardMaterial;
+    const old = mat[type] as THREE.Texture | null;
+    if (old) old.dispose();
+    mat[type] = null;
     mat.needsUpdate = true;
   }
 

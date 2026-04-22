@@ -1,9 +1,13 @@
 import { Timer } from "three/src/core/Timer.js";
 import EventEmitter from "./EventEmitter";
 
+interface TimeManagerEvents {
+  tick: [deltaTime: number, elapsedTime: number];
+}
+
 // RAF 驱动的帧定时器，每帧 emit('tick', deltaTime, elapsedTime)
 // 各特效模块通过 time.on('tick') 订阅，避免分散的 requestAnimationFrame 调用
-class TimeManager extends EventEmitter {
+class TimeManager extends EventEmitter<TimeManagerEvents> {
   private timer: Timer;
   private rafId: number = 0;
   private stopped = false;

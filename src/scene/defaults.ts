@@ -1,9 +1,6 @@
-import { useEffect, useRef } from "react";
-import "./App.css";
-import { createMapScene } from "./scene/createMapScene";
-import type { MapSceneConfig } from "./scene/types";
+import type { MapSceneConfig } from "./types";
 
-const DEMO_SCENE_CONFIG: MapSceneConfig = {
+export const DEFAULT_MAP_SCENE_CONFIG: MapSceneConfig = {
   data: {
     rootUrl: "/json/china-province.json",
     drill: {
@@ -86,11 +83,7 @@ const DEMO_SCENE_CONFIG: MapSceneConfig = {
   },
   highlight: {
     enabled: true,
-    style: {
-      color: "#ffffff",
-      opacity: 0.25,
-      scale: 1.02,
-    },
+    style: {},
   },
   flylines: {
     enabled: true,
@@ -116,34 +109,3 @@ const DEMO_SCENE_CONFIG: MapSceneConfig = {
   },
 };
 
-export default function App() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    let cancelled = false;
-    let cleanup: (() => void) | undefined;
-
-    void createMapScene(canvas, DEMO_SCENE_CONFIG).then((runtime) => {
-      if (cancelled) {
-        runtime.destroy();
-        return;
-      }
-      cleanup = () => runtime.destroy();
-    });
-
-    return () => {
-      cancelled = true;
-      cleanup?.();
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{ width: "100vw", height: "100vh", display: "block" }}
-    />
-  );
-}

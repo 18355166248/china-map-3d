@@ -3,8 +3,12 @@ import { CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { project } from "../geo/projection";
 import type { BboxOption } from "../geo/camera";
 
-// 层级对应的 CSS class，控制字体大小
-const DEPTH_CLASS: Record<number, string> = {
+export interface LabelControllerOptions {
+  classNames?: Partial<Record<number, string>>;
+}
+
+// 层级对应的 CSS class，控制字体大小。
+const DEFAULT_DEPTH_CLASS: Record<number, string> = {
   1: "map-label--province",
   2: "map-label--city",
   3: "map-label--county",
@@ -13,9 +17,20 @@ const DEPTH_CLASS: Record<number, string> = {
 export class LabelController {
   private objects: CSS2DObject[] = [];
   private scene: THREE.Scene;
+  private classNames: Record<number, string>;
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Scene, options: LabelControllerOptions = {}) {
     this.scene = scene;
+    this.classNames = { ...DEFAULT_DEPTH_CLASS };
+    this.setClassNames(options.classNames ?? {});
+  }
+
+  setClassNames(classNames: Partial<Record<number, string>>): void {
+    for (const [key, value] of Object.entries(classNames)) {
+      if (value) {
+        this.classNames[Number(key)] = value;
+      }
+    }
   }
 
   /**
@@ -29,7 +44,7 @@ export class LabelController {
   ): void {
     this.clear();
     const { baseHeight } = bboxOption;
-    const depthClass = DEPTH_CLASS[depth] ?? "map-label--city";
+    const depthClass = this.classNames[depth] ?? this.classNames[2];
 
     for (const feature of projected.features) {
       const centroid: [number, number] | undefined =

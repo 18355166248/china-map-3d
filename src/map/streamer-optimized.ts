@@ -93,7 +93,7 @@ function extractRingsWithMetadata(
 export function buildStreamerLinesOptimized(
   geojson: GeoJSON.FeatureCollection,
   bboxOption: BboxOption,
-  sizes: { width: number; height: number },
+  _sizes: { width: number; height: number },
   style: StreamerStyle = {}
 ): StreamerLines {
   const {

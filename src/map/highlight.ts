@@ -3,17 +3,42 @@ import { buildGeometry, toBufferGeometry } from "../geo/triangulate";
 import type { BboxOption } from "../geo/camera";
 import type { MapLayer } from "./MapLayer";
 
+export interface HighlightStyle {
+  color?: THREE.ColorRepresentation;
+  opacity?: number;
+  scale?: number;
+  cursor?: string;
+}
+
 export class HighlightController {
   private layer: MapLayer;
   private mesh?: THREE.Mesh;
   private currentAdcode?: number;
   private projected?: GeoJSON.FeatureCollection;
   private bboxOption?: BboxOption;
+  private style: Required<HighlightStyle>;
 
-  constructor(layer: MapLayer) {
+  constructor(layer: MapLayer, style: HighlightStyle = {}) {
     this.layer = layer;
+    this.style = {
+      color: style.color ?? 0xffffff,
+      opacity: style.opacity ?? 0.25,
+      scale: style.scale ?? 1.02,
+      cursor: style.cursor ?? "pointer",
+    };
     layer.canvas.addEventListener("mousemove", this.onMouseMove);
     layer.canvas.addEventListener("mouseleave", this.onMouseLeave);
+  }
+
+  setStyle(style: HighlightStyle): void {
+    this.style = {
+      ...this.style,
+      ...style,
+    };
+    if (this.mesh && this.mesh.material instanceof THREE.MeshBasicMaterial) {
+      this.mesh.material.color.set(this.style.color);
+      this.mesh.material.opacity = this.style.opacity;
+    }
   }
 
   /** 切换层级时更新数据源，同时清除旧高亮 */
@@ -41,7 +66,7 @@ export class HighlightController {
       return;
     }
 
-    this.layer.canvas.style.cursor = "pointer";
+    this.layer.canvas.style.cursor = this.style.cursor;
     this.buildHighlight(feature);
   };
 
@@ -69,14 +94,14 @@ export class HighlightController {
     });
 
     const mat = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: this.style.color,
       transparent: true,
-      opacity: 0.25,
+      opacity: this.style.opacity,
       depthWrite: false,
       depthTest: false, // 关闭深度测试，确保高亮始终显示在顶面上方
     });
     this.mesh = new THREE.Mesh(geo, mat);
-    this.mesh.scale.z = baseHeight * 1.02;
+    this.mesh.scale.z = baseHeight * this.style.scale;
     this.mesh.name = "highlight";
     // renderOrder 高于其他 mesh，确保最后渲染，不被透明排序影响
     this.mesh.renderOrder = 10;

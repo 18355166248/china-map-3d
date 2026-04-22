@@ -95,6 +95,10 @@ export class FlylineController {
     layer.scene.add(this.group);
   }
 
+  setVisible(visible: boolean): void {
+    this.group.visible = visible;
+  }
+
   setData(
     data: FlylineItem[],
     bboxOption: BboxOption,

@@ -1,11 +1,15 @@
-import EventEmitter from './EventEmitter';
+import EventEmitter from "./EventEmitter";
+
+interface SizeManagerEvents {
+  resize: [];
+}
 
 // 基于 canvas.clientWidth/Height 而非 window.innerWidth/Height，支持组件嵌入场景
-class SizeManager extends EventEmitter {
+class SizeManager extends EventEmitter<SizeManagerEvents> {
   canvas: HTMLCanvasElement;
-  width: number = 0;
-  height: number = 0;
-  pixelRatio: number = 1;
+  width = 0;
+  height = 0;
+  pixelRatio = 1;
 
   private onResize: () => void;
 
