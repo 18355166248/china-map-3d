@@ -11,6 +11,7 @@ import { loadGeoJSON } from "../geo/loader";
 import { buildGeometry } from "../geo/triangulate";
 import type { MapLayer } from "./MapLayer";
 import type { BoundaryStyle } from "./boundary";
+import { buildMergedBoundary } from "./mergedBoundary";
 import type { StreamerStyle } from "./streamer";
 
 interface DrillLevel {
@@ -25,21 +26,6 @@ const BOUNDARY_STYLE: BoundaryStyle = {
   opacity: 0.9,
 };
 
-/** 构建流光所需的 dissolved 外轮廓 */
-function buildDissolved(
-  projected: GeoJSON.FeatureCollection,
-): GeoJSON.FeatureCollection {
-  const flattened = turf.flatten(projected);
-  const withGroup = {
-    ...flattened,
-    features: flattened.features.map((f) => ({
-      ...f,
-      properties: { ...f.properties, _group: "layer" },
-    })),
-  } as GeoJSON.FeatureCollection<GeoJSON.Polygon>;
-  return turf.dissolve(withGroup, { propertyName: "_group" });
-}
-
 /** 重建当前层的所有场景对象 */
 function rebuildLayer(
   layer: MapLayer,
@@ -47,11 +33,12 @@ function rebuildLayer(
   streamerStyle: StreamerStyle,
 ): void {
   const { projected, bboxProj, kv } = level;
+  const mergedBoundary = buildMergedBoundary(projected);
   const geomGroup = buildGeometry(projected, bboxProj);
   layer.buildMeshes(geomGroup, kv.bboxOption);
-  layer.applyInnerShadow(projected, kv.bboxOption, { debug: false });
+  layer.applyInnerShadow(mergedBoundary, kv.bboxOption, { debug: false });
   layer.addBoundary(projected, kv.bboxOption, BOUNDARY_STYLE);
-  layer.addStreamer(buildDissolved(projected), kv.bboxOption, streamerStyle);
+  layer.addStreamer(mergedBoundary, kv.bboxOption, streamerStyle);
 }
 
 function lerp(a: number, b: number, t: number): number {

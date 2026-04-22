@@ -5,6 +5,8 @@ export interface InnerShadowStyle {
   shadowColor?: string; // 阴影颜色
   shadowBlurRatio?: number; // 阴影模糊半径占 canvas 短边的比例（0~1，默认 0.025 即 2.5%）
   resolution?: number; // canvas 长边分辨率，越大越清晰但越慢
+  minShadowBlurPx?: number; // 单个 feature 的最小模糊半径
+  maxShadowBlurPx?: number; // 单个 feature 的最大模糊半径
   debug?: boolean; // 开启后自动下载调试图片
 }
 
@@ -30,6 +32,8 @@ export function buildInnerShadowTexture(
     shadowColor = "rgba(0,212,255,0.8)", // 青色半透明，与科技蓝主题协调
     shadowBlurRatio = 0.05, // 默认 5% 短边，增强阴影宽度（参考项目用 10%）
     resolution = 2000,
+    minShadowBlurPx = 1.5,
+    maxShadowBlurPx,
     debug = false,
   } = style;
 
@@ -42,8 +46,9 @@ export function buildInnerShadowTexture(
   const canvasW = aspect >= 1 ? resolution : Math.round(resolution * aspect);
   const canvasH = aspect >= 1 ? Math.round(resolution / aspect) : resolution;
 
-  // 根据 canvas 短边动态计算 shadowBlur，确保小图和大图的阴影宽度等比
-  const shadowBlur = Math.min(canvasW, canvasH) * shadowBlurRatio;
+  // 全图 blur 作为上限；单个 feature 会按自身 bbox 再缩放一次
+  const globalShadowBlur = Math.min(canvasW, canvasH) * shadowBlurRatio;
+  const resolvedMaxShadowBlurPx = maxShadowBlurPx ?? globalShadowBlur;
 
   const canvas = document.createElement("canvas");
   canvas.width = canvasW;
@@ -54,49 +59,83 @@ export function buildInnerShadowTexture(
   const toX = (px: number) => ((px - x0) / bw) * canvasW;
   const toY = (py: number) => (1 - (py - y0) / bh) * canvasH;
 
-  // 将所有 Feature 的 Polygon/MultiPolygon 轮廓添加到当前路径
-  function addAllPaths() {
-    for (const feature of geojson.features) {
-      const geom = feature.geometry;
-      const polys: number[][][][] =
-        geom.type === "Polygon"
-          ? [(geom as GeoJSON.Polygon).coordinates]
-          : geom.type === "MultiPolygon"
-            ? (geom as GeoJSON.MultiPolygon).coordinates
-            : [];
-      for (const poly of polys) {
-        for (const ring of poly) {
-          ring.forEach(([x, y], i) => {
-            if (i === 0) ctx.moveTo(toX(x), toY(y));
-            else ctx.lineTo(toX(x), toY(y));
-          });
-          ctx.closePath();
-        }
+  function getFeaturePolygons(feature: GeoJSON.Feature): number[][][][] {
+    const geom = feature.geometry;
+    return geom.type === "Polygon"
+      ? [(geom as GeoJSON.Polygon).coordinates]
+      : geom.type === "MultiPolygon"
+        ? (geom as GeoJSON.MultiPolygon).coordinates
+        : [];
+  }
+
+  // 将单个 Feature 的 Polygon/MultiPolygon 轮廓添加到当前路径
+  function addFeaturePaths(feature: GeoJSON.Feature) {
+    const polys = getFeaturePolygons(feature);
+    for (const poly of polys) {
+      for (const ring of poly) {
+        ring.forEach(([x, y], i) => {
+          if (i === 0) ctx.moveTo(toX(x), toY(y));
+          else ctx.lineTo(toX(x), toY(y));
+        });
+        ctx.closePath();
       }
     }
   }
 
-  // Step 1: 绘制反转形状，让阴影从多边形边界向内渗
-  ctx.save();
-  // pad 足够大，确保大矩形外边缘的阴影无法到达多边形区域，避免全局底色污染
-  const pad = shadowBlur * 10;
-  ctx.beginPath();
-  ctx.rect(-pad, -pad, canvasW + pad * 2, canvasH + pad * 2); // 外部大矩形
-  addAllPaths(); // 多边形路径作为 evenodd 孔洞
-  ctx.shadowColor = shadowColor;
-  ctx.shadowBlur = shadowBlur;
-  ctx.fillStyle = "rgba(0,0,0,1)"; // 必须不透明，否则阴影强度不足
-  ctx.fill("evenodd"); // 多边形外部被填充，阴影向内渗
-  ctx.restore(); // restore 同时重置 shadowBlur/shadowColor
+  function getFeatureShadowBlur(feature: GeoJSON.Feature) {
+    let minFx = Infinity;
+    let minFy = Infinity;
+    let maxFx = -Infinity;
+    let maxFy = -Infinity;
 
-  // Step 2: destination-in 裁剪，只保留多边形内部的阴影像素
-  ctx.save();
-  ctx.globalCompositeOperation = "destination-in";
-  ctx.beginPath();
-  addAllPaths();
-  ctx.fillStyle = "rgba(255,255,255,1)"; // alpha=1 表示"保留此处"
-  ctx.fill("evenodd");
-  ctx.restore();
+    const polys = getFeaturePolygons(feature);
+    for (const poly of polys) {
+      for (const ring of poly) {
+        for (const [x, y] of ring) {
+          const cx = toX(x);
+          const cy = toY(y);
+          if (cx < minFx) minFx = cx;
+          if (cx > maxFx) maxFx = cx;
+          if (cy < minFy) minFy = cy;
+          if (cy > maxFy) maxFy = cy;
+        }
+      }
+    }
+
+    const featureShortEdge = Math.max(
+      1,
+      Math.min(maxFx - minFx, maxFy - minFy),
+    );
+
+    return Math.min(
+      resolvedMaxShadowBlurPx,
+      Math.max(minShadowBlurPx, featureShortEdge * shadowBlurRatio),
+    );
+  }
+
+  // 按 feature 单独绘制并裁剪，避免全国视图下的小区域沿用大图 blur
+  for (const feature of geojson.features) {
+    const shadowBlur = getFeatureShadowBlur(feature);
+    const pad = shadowBlur * 10;
+
+    ctx.save();
+
+    // 先裁剪到当前 feature 内部，只保留自身的阴影，避免相邻 feature 相互污染
+    ctx.beginPath();
+    addFeaturePaths(feature);
+    ctx.clip("evenodd");
+
+    // 再绘制外部区域，让阴影从边界向内渗透
+    ctx.beginPath();
+    ctx.rect(-pad, -pad, canvasW + pad * 2, canvasH + pad * 2);
+    addFeaturePaths(feature);
+    ctx.shadowColor = shadowColor;
+    ctx.shadowBlur = shadowBlur;
+    ctx.fillStyle = "rgba(0,0,0,1)";
+    ctx.fill("evenodd");
+
+    ctx.restore();
+  }
 
   if (debug) {
     canvas.toBlob((blob) => {

@@ -12,6 +12,7 @@ import { ParticleController } from "./map/particle";
 import { buildGradientTexture } from "./map/gradientTexture";
 import { buildTerrainTexture } from "./map/terrainTexture";
 import { GridBackground } from "./map/grid";
+import { buildMergedBoundary } from "./map/mergedBoundary";
 import * as turf from "@turf/turf";
 import "./App.css";
 
@@ -39,6 +40,7 @@ export default function App() {
       const projected = projectGeoJSON(raw) as GeoJSON.FeatureCollection;
       const bboxProj = turf.bbox(projected) as [number, number, number, number];
       const kv = computeKV({ geojsonProj: projected, pitch: 10, rotation: 4 });
+      const mergedBoundary = buildMergedBoundary(projected);
 
       layer.camera.applyStatus(kv.cameraStatus);
 
@@ -50,7 +52,7 @@ export default function App() {
       layer.buildMeshes(geomGroup, kv.bboxOption);
 
       // 内阴影在 buildMeshes 之后应用，需要 innerShadowMesh 已存在
-      layer.applyInnerShadow(projected, kv.bboxOption, { debug: false });
+      layer.applyInnerShadow(mergedBoundary, kv.bboxOption, { debug: false });
 
       // 省级边界线（顶面 + 底面）
       layer.addBoundary(projected, kv.bboxOption, {
@@ -61,16 +63,7 @@ export default function App() {
 
       // 流光动画：flatten 拍平 MultiPolygon → dissolve 合并为整体外轮廓 → 一个亮点沿边界转动
       // dissolve 只接受 Polygon，需先用 flatten 把 MultiPolygon 拆成独立 Polygon
-      const flattened = turf.flatten(projected);
-      const withGroup = {
-        ...flattened,
-        features: flattened.features.map((f) => ({
-          ...f,
-          properties: { ...f.properties, _group: "china" },
-        })),
-      } as GeoJSON.FeatureCollection<GeoJSON.Polygon>;
-      const dissolved = turf.dissolve(withGroup, { propertyName: "_group" });
-      layer.addStreamer(dissolved, kv.bboxOption, {
+      layer.addStreamer(mergedBoundary, kv.bboxOption, {
         color: "#00ffff",
         linewidth: 2,
         speed: 0.3,
