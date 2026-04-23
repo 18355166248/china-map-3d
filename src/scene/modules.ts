@@ -1,8 +1,8 @@
 import { FlylineController } from "../map/flyline";
-import { GridBackground } from "../map/grid";
 import { HighlightController } from "../map/highlight";
 import { LabelController } from "../map/label";
 import { ParticleController } from "../map/particle";
+import { RotatingRings } from "../map/rotatingRings";
 import type { MapLayer } from "../map/MapLayer";
 import type {
   LevelState,
@@ -12,8 +12,8 @@ import type {
   SceneModuleKey,
 } from "./types";
 
-type GridModuleConfig = Exclude<
-  NonNullable<MapSceneConfig["background"]>["grid"],
+type RotatingRingsModuleConfig = Exclude<
+  NonNullable<MapSceneConfig["background"]>["rotatingRings"],
   undefined
 >;
 
@@ -31,38 +31,65 @@ function getLevelStyle<T>(
   };
 }
 
-export class GridModule implements MapSceneModule {
-  key: SceneModuleKey = "grid";
-  private grid?: GridBackground;
-  private config: GridModuleConfig;
+export class RotatingRingsModule implements MapSceneModule {
+  key: SceneModuleKey = "rotatingRings";
+  private rings?: RotatingRings;
+  private config: RotatingRingsModuleConfig;
 
   constructor(
     layer: MapLayer,
-    config: GridModuleConfig,
+    config: RotatingRingsModuleConfig,
     initialLevel: LevelState,
   ) {
     this.config = config;
     if (config?.enabled === false) return;
-    this.grid = new GridBackground(
-      layer.scene,
-      layer.time,
-      initialLevel.bboxOption,
-      getLevelStyle(config, initialLevel.name) ?? {},
-      config?.rotation ?? 0,
-    );
+
+    const center: [number, number] = [
+      initialLevel.bboxOption.centerProj[0],
+      initialLevel.bboxOption.centerProj[1],
+    ];
+    const baseSize = this.computeSize(initialLevel);
+    this.rings = new RotatingRings(layer.scene, layer.time, {
+      size: baseSize,
+      center,
+      positionZ: -Math.max(1, initialLevel.bboxOption.baseHeight * 0.02),
+      outerSpeed: config.outerSpeed,
+      innerSpeed: config.innerSpeed,
+      color: config.color,
+      outerOpacity: config.outerOpacity,
+      innerOpacity: config.innerOpacity,
+    });
   }
 
   onLevelChange(level: LevelState): void {
-    if (!this.grid || this.config?.enabled === false) return;
-    this.grid.update(
-      level.bboxOption,
-      getLevelStyle(this.config, level.name) ?? {},
-      this.config.rotation ?? 0,
-    );
+    if (!this.rings) return;
+    const center: [number, number] = [
+      level.bboxOption.centerProj[0],
+      level.bboxOption.centerProj[1],
+    ];
+    const baseSize = this.computeSize(level);
+    this.rings.update({
+      center,
+      size: baseSize,
+      positionZ: -Math.max(1, level.bboxOption.baseHeight * 0.02),
+    });
   }
 
   dispose(): void {
-    this.grid?.dispose();
+    this.rings?.dispose();
+  }
+
+  private computeSize(level: LevelState): number {
+    const maxSize = Math.max(
+      level.bboxOption.size.width,
+      level.bboxOption.size.height,
+    );
+    const lvl = this.config.byLevel?.[level.name];
+    if (lvl?.size !== undefined) return lvl.size;
+    const ratio = lvl?.sizeRatio ?? this.config.sizeRatio ?? undefined;
+    if (ratio !== undefined) return maxSize * ratio;
+    // fallback: if legacy absolute size provided, use it; otherwise default 0.8 ratio
+    return this.config.size ? this.config.size : maxSize * 0.8;
   }
 }
 
@@ -149,6 +176,16 @@ export class FlylineModule implements MapSceneModule {
       typeof this.config.data === "function"
         ? this.config.data(level)
         : this.config.data;
+
+    // 如果数据为空或未定义，清空飞线
+    if (!data || data.length === 0) {
+      this.flylines.setData([], level.bboxOption, {
+        ...this.config.style,
+        ...this.config.byLevel?.[level.name],
+      });
+      return;
+    }
+
     this.flylines.setData(data, level.bboxOption, {
       ...this.config.style,
       ...this.config.byLevel?.[level.name],

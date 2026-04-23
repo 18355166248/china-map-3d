@@ -1,123 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import { createMapScene } from "./scene/createMapScene";
-import type { MapSceneConfig } from "./scene/types";
-
-const DEMO_SCENE_CONFIG: MapSceneConfig = {
-  data: {
-    rootUrl: "/json/china-province.json",
-    drill: {
-      enabled: true,
-      maxDepth: 3,
-    },
-  },
-  camera: {
-    pitch: 10,
-    rotation: 4,
-  },
-  baseLayer: {
-    topColor: "#4a8dc7",
-    bottomColor: "#0a1929",
-    innerShadow: {
-      debug: false,
-    },
-    topMaterial: {
-      metalness: 0.1,
-      roughness: 0.7,
-      normalScale: 1.5,
-    },
-  },
-  boundary: {
-    enabled: true,
-    style: {
-      color: "#4fc3f7",
-      linewidth: 1,
-      opacity: 0.9,
-    },
-  },
-  streamer: {
-    enabled: true,
-    style: {
-      color: "#00ffff",
-      linewidth: 2,
-      speed: 0.3,
-      minLength: 2000,
-      optimized: true,
-    },
-    byLevel: {
-      city: {
-        minLength: 500,
-      },
-      county: {
-        minLength: 100,
-      },
-    },
-  },
-  background: {
-    grid: {
-      enabled: true,
-      rotation: 4,
-      style: {},
-    },
-  },
-  textures: {
-    map: {
-      mode: "gradient",
-      resetColor: true,
-      style: {
-        type: "radial",
-        colors: ["#3a7db0", "#2a6496", "#1a4d7a"],
-        resolution: 2000,
-      },
-    },
-    normal: {
-      mode: "terrain",
-      style: {
-        type: "tile",
-        tileUrl:
-          "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-        normalScale: 1,
-        resolution: 2048,
-      },
-    },
-  },
-  labels: {
-    enabled: true,
-  },
-  highlight: {
-    enabled: true,
-    style: {
-      color: "#ffffff",
-      opacity: 0.25,
-      scale: 1.02,
-    },
-  },
-  flylines: {
-    enabled: true,
-    data: [
-      { from: [116.4, 39.9], to: [121.47, 31.23] },
-      { from: [121.47, 31.23], to: [113.26, 23.13] },
-      { from: [113.26, 23.13], to: [104.07, 30.67] },
-      { from: [104.07, 30.67], to: [116.4, 39.9] },
-    ],
-    style: {
-      color: "#00d4ff",
-      speed: 0.6,
-    },
-  },
-  particles: {
-    enabled: true,
-    style: {
-      color: "#00d4ff",
-      count: 150,
-      sizeMin: 300,
-      sizeMax: 500,
-    },
-  },
-};
+import { loadConfig } from "./config";
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -126,13 +15,28 @@ export default function App() {
     let cancelled = false;
     let cleanup: (() => void) | undefined;
 
-    void createMapScene(canvas, DEMO_SCENE_CONFIG).then((runtime) => {
-      if (cancelled) {
-        runtime.destroy();
-        return;
-      }
-      cleanup = () => runtime.destroy();
-    });
+    // 从 JSON 文件加载配置
+    loadConfig({
+      configUrl: "/config/default.json",
+    })
+      .then((config) => {
+        if (cancelled) return;
+        return createMapScene(canvas, config);
+      })
+      .then((runtime) => {
+        if (cancelled || !runtime) {
+          runtime?.destroy();
+          return;
+        }
+        setLoading(false);
+        cleanup = () => runtime.destroy();
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("Failed to initialize map scene:", err);
+        setError(err instanceof Error ? err.message : String(err));
+        setLoading(false);
+      });
 
     return () => {
       cancelled = true;
@@ -141,9 +45,42 @@ export default function App() {
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{ width: "100vw", height: "100vh", display: "block" }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100vw", height: "100vh", display: "block" }}
+      />
+      {loading && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            color: "#fff",
+            fontSize: "18px",
+          }}
+        >
+          加载中...
+        </div>
+      )}
+      {error && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            color: "#ff4444",
+            fontSize: "16px",
+            padding: "20px",
+            background: "rgba(0,0,0,0.8)",
+            borderRadius: "8px",
+          }}
+        >
+          加载失败: {error}
+        </div>
+      )}
+    </>
   );
 }

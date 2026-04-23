@@ -51,10 +51,19 @@ export const DEFAULT_MAP_SCENE_CONFIG: MapSceneConfig = {
     },
   },
   background: {
-    grid: {
+    rotatingRings: {
       enabled: true,
-      rotation: 4,
-      style: {},
+      // Use ratio so it adapts by level; per-level overrides below
+      sizeRatio: 0.85,
+      outerSpeed: 0.001,
+      innerSpeed: -0.004,
+      color: 0x48afff,
+      outerOpacity: 0.2,
+      innerOpacity: 0.4,
+      byLevel: {
+        city: { sizeRatio: 0.75 },
+        county: { sizeRatio: 0.6 },
+      },
     },
   },
   textures: {

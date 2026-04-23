@@ -1,0 +1,88 @@
+{
+  "debug": {
+    "perf": false,
+    "cache": true
+  },
+  "data": {
+    "rootUrl": "/json/china-province.json",
+    "apiConfig": {
+      "baseUrl": "https://api.example.com",
+      "provinceEndpoint": "/geo/province",
+      "cityEndpoint": "/geo/city",
+      "countyEndpoint": "/geo/county",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN",
+        "Content-Type": "application/json"
+      }
+    },
+    "drill": {
+      "enabled": true,
+      "maxDepth": 3
+    }
+  },
+  "camera": {
+    "pitch": 10,
+    "rotation": 4
+  },
+  "baseLayer": {
+    "topColor": "#4a8dc7",
+    "bottomColor": "#0a1929"
+  },
+  "boundary": {
+    "enabled": true,
+    "style": {
+      "color": "#4fc3f7",
+      "linewidth": 1,
+      "opacity": 0.9
+    }
+  },
+  "streamer": {
+    "enabled": true,
+    "style": {
+      "color": "#00ffff",
+      "linewidth": 2,
+      "speed": 0.3,
+      "minLength": 2000,
+      "optimized": true
+    }
+  },
+  "textures": {
+    "map": {
+      "mode": "gradient",
+      "resetColor": true,
+      "gradientStyle": {
+        "type": "radial",
+        "colors": ["#3a7db0", "#2a6496", "#1a4d7a"],
+        "resolution": 2000
+      }
+    }
+  },
+  "labels": {
+    "enabled": true
+  },
+  "highlight": {
+    "enabled": true,
+    "style": {
+      "color": "#ffffff",
+      "opacity": 0.25,
+      "scale": 1.02
+    }
+  },
+  "flylines": {
+    "enabled": true,
+    "dataUrl": "https://api.example.com/flylines",
+    "style": {
+      "color": "#00d4ff",
+      "speed": 0.6
+    }
+  },
+  "particles": {
+    "enabled": true,
+    "style": {
+      "color": "#00d4ff",
+      "count": 150,
+      "sizeMin": 300,
+      "sizeMax": 500
+    }
+  }
+}

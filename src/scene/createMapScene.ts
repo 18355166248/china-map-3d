@@ -32,9 +32,9 @@ interface BaseSceneCacheEntry {
 }
 
 interface ModuleConstructorMap {
-  GridModule: new (
+  RotatingRingsModule: new (
     layer: MapLayer,
-    config: NonNullable<NonNullable<MapSceneConfig["background"]>["grid"]>,
+    config: NonNullable<NonNullable<MapSceneConfig["background"]>["rotatingRings"]>,
     initialLevel: LevelState,
   ) => MapSceneModule;
   LabelModule: new (
@@ -60,7 +60,7 @@ interface ModuleConstructorMap {
 }
 
 const MODULE_KEYS: SceneModuleKey[] = [
-  "grid",
+  "rotatingRings",
   "labels",
   "highlight",
   "flylines",
@@ -124,15 +124,15 @@ function getModuleConfig(
   config: MapSceneConfig,
   key: SceneModuleKey,
 ):
-  | NonNullable<NonNullable<MapSceneConfig["background"]>["grid"]>
+  | NonNullable<NonNullable<MapSceneConfig["background"]>["rotatingRings"]>
   | NonNullable<MapSceneConfig["labels"]>
   | NonNullable<MapSceneConfig["highlight"]>
   | NonNullable<MapSceneConfig["flylines"]>
   | NonNullable<MapSceneConfig["particles"]>
   | undefined {
   switch (key) {
-    case "grid":
-      return config.background?.grid;
+    case "rotatingRings":
+      return config.background?.rotatingRings;
     case "labels":
       return config.labels;
     case "highlight":
@@ -499,11 +499,11 @@ export class MapSceneRuntime {
     level: LevelState,
   ): MapSceneModule | undefined {
     switch (key) {
-      case "grid":
-        return this.config.background?.grid
-          ? new constructors.GridModule(
+      case "rotatingRings":
+        return this.config.background?.rotatingRings
+          ? new constructors.RotatingRingsModule(
               this.layer,
-              this.config.background.grid,
+              this.config.background.rotatingRings,
               level,
             )
           : undefined;
@@ -541,7 +541,7 @@ export class MapSceneRuntime {
   private async getModuleConstructors(): Promise<ModuleConstructorMap> {
     if (!this.moduleConstructorsPromise) {
       this.moduleConstructorsPromise = import("./modules").then((module) => ({
-        GridModule: module.GridModule,
+        RotatingRingsModule: module.RotatingRingsModule,
         LabelModule: module.LabelModule,
         HighlightModule: module.HighlightModule,
         FlylineModule: module.FlylineModule,
@@ -668,7 +668,7 @@ export class MapSceneRuntime {
     changedKeys: Set<keyof MapSceneConfig>,
   ): SceneModuleKey[] {
     const modules: SceneModuleKey[] = [];
-    if (changedKeys.has("background")) modules.push("grid");
+    if (changedKeys.has("background")) modules.push("rotatingRings");
     if (changedKeys.has("labels")) modules.push("labels");
     if (changedKeys.has("highlight")) modules.push("highlight");
     if (changedKeys.has("flylines")) modules.push("flylines");

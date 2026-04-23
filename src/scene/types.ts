@@ -25,7 +25,7 @@ export interface LevelState {
 }
 
 export type SceneModuleKey =
-  | "grid"
+  | "rotatingRings"
   | "labels"
   | "highlight"
   | "flylines"
@@ -116,8 +116,29 @@ export interface MapSceneConfig {
   boundary?: LevelStyleConfig<BoundaryStyle>;
   streamer?: LevelStyleConfig<StreamerStyle>;
   background?: {
-    grid?: LevelStyleConfig<GridStyle> & {
-      rotation?: number;
+    rotatingRings?: {
+      enabled?: boolean;
+      // Absolute world size. Prefer sizeRatio for auto-fit.
+      size?: number;
+      // Fraction of current bbox max(width,height). 0-2 recommended.
+      sizeRatio?: number;
+      outerSpeed?: number;
+      innerSpeed?: number;
+      color?: number;
+      outerOpacity?: number;
+      innerOpacity?: number;
+      // Back-compat, unused by new implementation
+      positionY?: number;
+      // Per-level overrides
+      byLevel?: Partial<
+        Record<
+          MapLevelName,
+          {
+            size?: number;
+            sizeRatio?: number;
+          }
+        >
+      >;
     };
   };
   textures?: {
