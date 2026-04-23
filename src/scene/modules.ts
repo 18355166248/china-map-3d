@@ -125,17 +125,8 @@ export class LabelModule implements MapSceneModule {
     this.labels.update(level.projected, level.bboxOption, level.depth);
   }
 
-  onLevelChange(level: LevelState): void {
-    if (this.config.enabled === false) return;
-    this.labels.update(level.projected, level.bboxOption, level.depth);
-  }
-
   setVisible(visible: boolean): void {
     this.labels.setVisible?.(visible);
-  }
-
-  dispose(): void {
-    this.labels.dispose();
   }
 
   dispose(): void {
