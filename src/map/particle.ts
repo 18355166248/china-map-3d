@@ -146,6 +146,11 @@ export class ParticleController {
     this.elapsed = 0;
   }
 
+  /** 切换显隐，用于 loading 期间临时隐藏粒子 */
+  setVisible(visible: boolean): void {
+    if (this.points) this.points.visible = visible;
+  }
+
   dispose(): void {
     this.clear();
   }

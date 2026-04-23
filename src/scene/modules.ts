@@ -235,6 +235,7 @@ export class ParticleModule implements MapSceneModule {
   key: SceneModuleKey = "particles";
   private particles: ParticleController;
   private config: NonNullable<MapSceneConfig["particles"]>;
+  private refSize: number; // 记录初始层 bbox 的 max(width,height)，作为等比缩放参考
 
   constructor(
     layer: MapLayer,
@@ -243,6 +244,10 @@ export class ParticleModule implements MapSceneModule {
   ) {
     this.config = config;
     this.particles = new ParticleController(layer);
+    this.refSize = Math.max(
+      initialLevel.bboxOption.size.width,
+      initialLevel.bboxOption.size.height,
+    );
     if (config.enabled !== false) {
       this.onLevelChange(initialLevel);
     }
@@ -250,10 +255,33 @@ export class ParticleModule implements MapSceneModule {
 
   onLevelChange(level: LevelState): void {
     if (this.config.enabled === false) return;
-    this.particles.setData(
-      level.bboxOption,
-      getLevelStyle(this.config, level.name) ?? {},
+    const base = getLevelStyle(this.config, level.name) ?? {};
+
+    // 等比缩放：当前层 bbox 的 max(width,height) 相对于初始层的比例
+    const currMax = Math.max(
+      level.bboxOption.size.width,
+      level.bboxOption.size.height,
     );
+    const lin = Math.max(0.1, Math.min(1, currMax / this.refSize));
+    // 二/三级略放大：给粒子尺寸与数量一个轻微的深度加成
+    const depthBoost = level.depth === 1 ? 1.8 : level.depth === 2 ? 1.8 : 2;
+    const sizeScale = Math.min(1.35, lin * 1.15 * depthBoost);
+    const countScale = Math.max(0.1, Math.min(1, lin * lin * 1.15 * depthBoost));
+    const motionScale = 0.7 + 0.3 * lin;
+
+    this.particles.setData(level.bboxOption, {
+      ...base,
+      sizeMin: Math.max(1, Math.round((base.sizeMin ?? 2) * sizeScale)),
+      sizeMax: Math.max(2, Math.round((base.sizeMax ?? 5) * sizeScale)),
+      count: Math.max(100, Math.round((base.count ?? 2500) * countScale)),
+      speedMin: (base.speedMin ?? 0.08) * motionScale,
+      speedMax: (base.speedMax ?? 0.25) * motionScale,
+      maxRiseFactor: (base.maxRiseFactor ?? 1.5) * motionScale,
+    });
+  }
+
+  setVisible(visible: boolean): void {
+    this.particles.setVisible?.(visible);
   }
 
   dispose(): void {
