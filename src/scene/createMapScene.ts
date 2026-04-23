@@ -302,9 +302,9 @@ export class MapSceneRuntime {
 
   private async rebuildBaseScene(
     level: LevelState,
-    options: { rebuildMeshes?: boolean; rebuildTextures?: boolean } = {},
+    options: { rebuildMeshes?: boolean; rebuildTextures?: boolean; targetOpacity?: number } = {},
   ): Promise<void> {
-    const { rebuildMeshes = true, rebuildTextures = true } = options;
+    const { rebuildMeshes = true, rebuildTextures = true, targetOpacity = 1 } = options;
     let cacheEntry = this.baseSceneCache.get(level.cacheKey);
 
     if (!cacheEntry) {
@@ -357,7 +357,8 @@ export class MapSceneRuntime {
     if (rebuildTextures) {
       await this.applyTextures(level);
     }
-    this.layer.setSceneOpacity(1);
+    // 由调用方决定何时可见（钻取期间保持 0，待资源齐备再设为 1）
+    this.layer.setSceneOpacity(targetOpacity);
     this.currentLevel = level;
   }
 
@@ -589,10 +590,30 @@ export class MapSceneRuntime {
           name: depthToLevelName(depth),
         }) ?? {},
       rebuildLevel: async (level, context) => {
+        // 切换顺序：先隐藏旧地图 → 清理飞线 → 重建 → 应用纹理 → 等纹理 promise 全部完成 → 再淡入
+        this.layer.setMeshesVisible(false);
+        this.layer.clearStreamer();
         const nextLevel = this.toLevelState(level, context.depth);
-        await this.rebuildBaseScene(nextLevel);
+        // 重建期间保持不可见，直到纹理/法线贴图准备就绪
+        await this.rebuildBaseScene(nextLevel, { targetOpacity: 0 });
+        // applyTextures 已在 rebuildBaseScene 内部执行（rebuildTextures 默认 true）
+        // 所以此处只需在 onAfterRebuild 之后由 DrillController 统一 setSceneOpacity(1)
       },
     });
+    // loading 开启：隐藏环、标签、飞线、粒子、暂停 hover
+    this.drill.onLoadingChange = (loading) => {
+      // 模块可见性切换
+      this.moduleRegistry.get("rotatingRings")?.setVisible?.(!loading);
+      this.moduleRegistry.get("labels")?.setVisible?.(!loading);
+      this.moduleRegistry.get("flylines")?.setVisible?.(!loading);
+      // 若当前层没有飞线数据，保持隐藏，等有数据再显示（FlylineModule 内部已二次判断）
+      this.moduleRegistry.get("particles")?.setVisible?.(!loading);
+      (this.moduleRegistry.get("highlight") as any)?.setVisible?.(!loading);
+      // 通知外部 UI
+      this.canvas.dispatchEvent(
+        new CustomEvent("map-loading", { detail: { loading } }),
+      );
+    };
 
     this.drill.onLevelChange = (projected, bboxOption, depth) => {
       const level: LevelState = {

@@ -17,6 +17,7 @@ export class HighlightController {
   private projected?: GeoJSON.FeatureCollection;
   private bboxOption?: BboxOption;
   private style: Required<HighlightStyle>;
+  private paused = false; // loading 期间暂停 hover 高亮，避免交互干扰
 
   constructor(layer: MapLayer, style: HighlightStyle = {}) {
     this.layer = layer;
@@ -28,6 +29,16 @@ export class HighlightController {
     };
     layer.canvas.addEventListener("mousemove", this.onMouseMove);
     layer.canvas.addEventListener("mouseleave", this.onMouseLeave);
+  }
+
+  /** 切换 hover 高亮是否启用；暂停时清除现有高亮并还原光标 */
+  setPaused(paused: boolean): void {
+    this.paused = paused;
+    if (paused) {
+      this.clearMesh();
+      this.currentAdcode = undefined;
+      this.layer.canvas.style.cursor = "default";
+    }
   }
 
   setStyle(style: HighlightStyle): void {
@@ -47,9 +58,14 @@ export class HighlightController {
     this.bboxOption = bboxOption;
     this.clearMesh();
     this.currentAdcode = undefined;
+    // 防御：地图 mesh 隐藏时不渲染高亮
+    if ((this.layer as any).topMeshInstance && (this.layer as any).topMeshInstance.visible === false) {
+      return;
+    }
   }
 
   private onMouseMove = (e: MouseEvent): void => {
+    if (this.paused) return;
     if (!this.projected || !this.bboxOption) return;
     const rect = this.layer.canvas.getBoundingClientRect();
     const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;

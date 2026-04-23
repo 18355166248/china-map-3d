@@ -92,7 +92,9 @@ export const DEFAULT_MAP_SCENE_CONFIG: MapSceneConfig = {
   },
   highlight: {
     enabled: true,
-    style: {},
+    style: {
+      scale: 1.01, // 缩小默认高亮拉伸，减少二/三级层级下的视觉溢出
+    },
   },
   flylines: {
     enabled: true,
@@ -114,6 +116,10 @@ export const DEFAULT_MAP_SCENE_CONFIG: MapSceneConfig = {
       count: 150,
       sizeMin: 300,
       sizeMax: 500,
+    },
+    byLevel: {
+      city: { sizeMin: 120, sizeMax: 240, count: 120 },
+      county: { sizeMin: 60, sizeMax: 120, count: 100 },
     },
   },
 };

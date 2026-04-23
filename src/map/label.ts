@@ -75,6 +75,10 @@ export class LabelController {
     this.objects = [];
   }
 
+  setVisible(visible: boolean): void {
+    for (const obj of this.objects) obj.visible = visible;
+  }
+
   dispose(): void {
     this.clear();
   }

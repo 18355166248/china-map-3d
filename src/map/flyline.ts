@@ -287,4 +287,9 @@ export class FlylineController {
     this.clear();
     this.layer.scene.remove(this.group);
   }
+
+  /** 是否有可见数据（用于 loading 结束时按需恢复显隐） */
+  hasData(): boolean {
+    return this.entries.length > 0 || this.trailMats.length > 0;
+  }
 }

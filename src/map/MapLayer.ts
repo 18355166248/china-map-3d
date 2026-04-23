@@ -334,6 +334,34 @@ export class MapLayer extends MapApplication {
   }
 
   /**
+   * 切换层级前临时隐藏地图几何，避免 hover 命中旧 mesh。
+   */
+  setMeshesVisible(visible: boolean): void {
+    if (this.topMesh) this.topMesh.visible = visible;
+    if (this.sideMesh) this.sideMesh.visible = visible;
+    if (this.innerShadowMesh) this.innerShadowMesh.visible = visible;
+  }
+
+  /**
+   * 移除场景中现有的高亮网格（名称为 "highlight"）。
+   */
+  clearHighlight(): void {
+    const toRemove: THREE.Object3D[] = [];
+    this.scene.traverse((obj) => {
+      if (obj.name === "highlight" && obj instanceof THREE.Mesh) {
+        toRemove.push(obj);
+      }
+    });
+    for (const obj of toRemove) {
+      this.scene.remove(obj);
+      obj.geometry?.dispose();
+      const mat = (obj as THREE.Mesh).material;
+      if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+      else (mat as THREE.Material)?.dispose();
+    }
+  }
+
+  /**
    * 加载图片纹理并贴到顶面，支持 map / normalMap / emissiveMap
    * 重复调用会自动释放旧纹理，防止 GPU 显存泄漏
    */
@@ -423,7 +451,7 @@ export class MapLayer extends MapApplication {
     ndcY: number,
     projected: GeoJSON.FeatureCollection,
   ): GeoJSON.Feature | null {
-    if (!this.topMesh) return null;
+    if (!this.topMesh || this.topMesh.visible === false) return null; // 地图隐藏时不响应 hover
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(
       new THREE.Vector2(ndcX, ndcY),

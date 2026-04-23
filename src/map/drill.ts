@@ -176,6 +176,7 @@ export class DrillController {
         suffix,
       });
       if (this.onAfterRebuild) await this.onAfterRebuild(level.bboxProj);
+      // 等待 onAfterRebuild 内部的资源准备（如瓦片/图片纹理/法线贴图），再淡入
       this.layer.setSceneOpacity(1);
 
       this.stack.push(level);

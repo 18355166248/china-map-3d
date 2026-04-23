@@ -75,6 +75,10 @@ export class RotatingRingsModule implements MapSceneModule {
     });
   }
 
+  setVisible(visible: boolean): void {
+    this.rings?.setVisible(visible);
+  }
+
   dispose(): void {
     this.rings?.dispose();
   }
@@ -121,6 +125,19 @@ export class LabelModule implements MapSceneModule {
     this.labels.update(level.projected, level.bboxOption, level.depth);
   }
 
+  onLevelChange(level: LevelState): void {
+    if (this.config.enabled === false) return;
+    this.labels.update(level.projected, level.bboxOption, level.depth);
+  }
+
+  setVisible(visible: boolean): void {
+    this.labels.setVisible?.(visible);
+  }
+
+  dispose(): void {
+    this.labels.dispose();
+  }
+
   dispose(): void {
     this.labels.dispose();
   }
@@ -146,6 +163,11 @@ export class HighlightModule implements MapSceneModule {
   onLevelChange(level: LevelState): void {
     if (this.config.enabled === false) return;
     this.highlight.update(level.projected, level.bboxOption);
+  }
+
+  setVisible(visible: boolean): void {
+    // 模块自身没有持久 mesh；通过暂停 hover 来“隐藏”交互和高亮
+    this.highlight.setPaused(!visible);
   }
 
   dispose(): void {
@@ -177,12 +199,13 @@ export class FlylineModule implements MapSceneModule {
         ? this.config.data(level)
         : this.config.data;
 
-    // 如果数据为空或未定义，清空飞线
+    // 如果数据为空或未定义，清空并保持隐藏，等待下一次加载
     if (!data || data.length === 0) {
       this.flylines.setData([], level.bboxOption, {
         ...this.config.style,
         ...this.config.byLevel?.[level.name],
       });
+      this.flylines.setVisible(false);
       return;
     }
 
@@ -190,6 +213,17 @@ export class FlylineModule implements MapSceneModule {
       ...this.config.style,
       ...this.config.byLevel?.[level.name],
     });
+    // 确保有数据时强制显示（避免此前因 loading 隐藏后未恢复的情况）
+    this.flylines.setVisible(true);
+  }
+
+  setVisible(visible: boolean): void {
+    // 若在 loading 结束时没有数据，仍保持隐藏
+    if (visible && !(this.flylines as any).hasData?.()) {
+      this.flylines.setVisible(false);
+      return;
+    }
+    this.flylines.setVisible(visible);
   }
 
   dispose(): void {

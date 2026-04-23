@@ -165,5 +165,8 @@ export interface MapSceneConfig {
 export interface MapSceneModule {
   key: SceneModuleKey;
   onLevelChange?(level: LevelState): void | Promise<void>;
+  // loading 期间可选隐藏/暂停的能力
+  setVisible?(visible: boolean): void;
+  pauseHover?(paused: boolean): void;
   dispose(): void;
 }

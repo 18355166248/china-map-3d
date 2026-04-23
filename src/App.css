@@ -4,6 +4,12 @@
   box-sizing: border-box;
 }
 
+/* 自适应 loading：根据视口缩放圆环尺寸与字重 */
+:root {
+  --loading-size: clamp(100px, 18vmin, 220px);
+  --loading-font: clamp(10px, 1.6vmin, 14px);
+}
+
 body {
   background: #0a0e1a;
   overflow: hidden;
@@ -29,8 +35,8 @@ body {
 
 .map-loading__halo {
   position: absolute;
-  width: 160px;
-  height: 160px;
+  width: var(--loading-size);
+  height: var(--loading-size);
   border-radius: 50%;
   border: 1px solid rgba(91, 220, 255, 0.28);
   box-shadow:
@@ -45,13 +51,13 @@ body {
 .map-loading__halo::after {
   content: "";
   position: absolute;
-  inset: 14px;
+  inset: calc(var(--loading-size) * 0.09);
   border-radius: 50%;
   border: 1px solid rgba(91, 220, 255, 0.2);
 }
 
 .map-loading__halo::after {
-  inset: -12px;
+  inset: calc(var(--loading-size) * -0.075);
   border-style: dashed;
   border-color: rgba(91, 220, 255, 0.14);
   animation: map-loading-spin 3.2s linear infinite reverse;
@@ -64,7 +70,7 @@ body {
   border-radius: 999px;
   color: #dff8ff;
   font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-  font-size: 12px;
+  font-size: var(--loading-font);
   letter-spacing: 0.28em;
   text-transform: uppercase;
   background: rgba(7, 18, 38, 0.72);
