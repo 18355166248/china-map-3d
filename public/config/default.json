@@ -69,15 +69,15 @@
     },
     "rotatingRings": {
       "enabled": true,
-      "sizeRatio": 0.85,
+      "sizeRatio": 0.75,
       "outerSpeed": 0.001,
       "innerSpeed": -0.004,
       "color": 4760063,
       "outerOpacity": 0.2,
       "innerOpacity": 0.4,
       "byLevel": {
-        "city": { "sizeRatio": 0.75 },
-        "county": { "sizeRatio": 0.6 }
+        "city": { "sizeRatio": 0.65 },
+        "county": { "sizeRatio": 0.5 }
       }
     }
   },
