@@ -21,6 +21,257 @@
   font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 
+.config-panel {
+  color: #e6f4ff;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  padding-bottom: 12px;
+}
+
+.config-panel--drawer {
+  padding-bottom: 110px;
+}
+
+.config-panel .ant-form {
+  position: relative;
+}
+
+.config-panel .ant-card {
+  border-color: rgba(115, 225, 255, 0.22);
+  background:
+    linear-gradient(180deg, rgba(16, 38, 72, 0.92), rgba(9, 21, 43, 0.92));
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(166, 235, 255, 0.08);
+}
+
+.config-panel .ant-card-head {
+  border-bottom-color: rgba(115, 225, 255, 0.18);
+}
+
+.config-panel .ant-card-head-title,
+.config-panel .ant-form-item-label > label,
+.config-panel .ant-typography,
+.config-route-subtitle {
+  color: #dcefff !important;
+}
+
+.config-panel .ant-form-item {
+  margin-bottom: 14px;
+}
+
+.config-form-collapse {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-panel .ant-collapse {
+  background: transparent !important;
+  border: none !important;
+}
+
+.config-panel .ant-collapse-item {
+  overflow: hidden;
+  border: 1px solid rgba(128, 232, 255, 0.26) !important;
+  border-radius: 18px !important;
+  background:
+    radial-gradient(circle at top left, rgba(72, 138, 255, 0.22), transparent 32%),
+    radial-gradient(circle at top right, rgba(0, 204, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(20, 45, 86, 0.96), rgba(10, 22, 45, 0.98)) !important;
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(166, 235, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+}
+
+.config-panel .ant-collapse-header {
+  align-items: center !important;
+  padding: 18px 20px !important;
+  border-bottom: 1px solid rgba(115, 225, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(35, 70, 120, 0.44), rgba(18, 33, 60, 0.18));
+}
+
+.config-panel .ant-collapse-header-text {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-shadow: 0 0 18px rgba(64, 196, 255, 0.12);
+}
+
+.config-panel .ant-collapse-content {
+  background: transparent !important;
+  border-top: none !important;
+}
+
+.config-panel .ant-collapse-content-box {
+  padding: 18px 18px 12px !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+}
+
+.config-panel .ant-form-item {
+  margin-bottom: 16px;
+  padding: 12px 12px 10px;
+  border: 1px solid rgba(115, 225, 255, 0.1);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02));
+}
+
+.config-panel .ant-form-item:last-child {
+  margin-bottom: 8px;
+}
+
+.config-panel .ant-input,
+.config-panel .ant-input-number,
+.config-panel .ant-input-number-input,
+.config-panel .ant-select-selector,
+.config-panel .ant-select-selection-item,
+.config-panel .ant-select-selection-placeholder,
+.config-panel .ant-select-item,
+.config-panel .ant-select-item-option-content,
+.config-panel .ant-collapse-header-text,
+.config-panel .ant-collapse-expand-icon,
+.config-panel .ant-form-item-extra,
+.config-panel .ant-form-item-explain,
+.config-panel .ant-btn span,
+.config-panel .anticon,
+.config-panel .ant-input::placeholder,
+.config-panel .ant-switch-inner,
+.config-panel .ant-empty-description {
+  color: #eaf7ff !important;
+}
+
+.config-panel .ant-input,
+.config-panel .ant-input-number,
+.config-panel .ant-select-selector,
+.config-panel .ant-input-affix-wrapper {
+  min-height: 42px;
+  border-color: rgba(125, 231, 255, 0.24) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.05)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(0, 0, 0, 0.02) !important;
+}
+
+.config-panel .ant-input:hover,
+.config-panel .ant-input-number:hover,
+.config-panel .ant-select:hover .ant-select-selector,
+.config-panel .ant-input-affix-wrapper:hover {
+  border-color: rgba(125, 233, 255, 0.28) !important;
+}
+
+.config-panel .ant-input:focus,
+.config-panel .ant-input-focused,
+.config-panel .ant-input-number-focused,
+.config-panel .ant-select-focused .ant-select-selector,
+.config-panel .ant-input-affix-wrapper-focused {
+  border-color: rgba(64, 196, 255, 0.58) !important;
+  box-shadow:
+    0 0 0 3px rgba(40, 182, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+.config-panel .ant-input-number {
+  width: 100%;
+}
+
+.config-panel .ant-input-number-input,
+.config-panel .ant-input,
+.config-panel .ant-select-selection-item {
+  font-weight: 500;
+}
+
+.config-panel .ant-btn-default {
+  border-color: rgba(91, 220, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e6f4ff;
+}
+
+.config-panel .ant-btn-color-primary {
+  box-shadow: 0 10px 24px rgba(0, 174, 255, 0.18);
+}
+
+.config-panel .ant-select-arrow,
+.config-panel .ant-collapse-arrow,
+.config-panel .ant-form-item-required::before {
+  color: rgba(220, 239, 255, 0.78) !important;
+}
+
+.config-panel .ant-collapse-content,
+.config-panel .ant-collapse-content-box,
+.config-panel .ant-collapse-header,
+.config-panel .ant-select-dropdown,
+.config-panel .ant-select-item-option-selected {
+  color: #eaf7ff !important;
+}
+
+.config-panel .ant-select-dropdown,
+.config-panel .ant-select-item,
+.config-panel .ant-select-item-option {
+  background: #10203a !important;
+}
+
+.config-panel .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: rgba(40, 182, 255, 0.16) !important;
+}
+
+.config-route-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.config-route-subtitle {
+  margin-top: 8px;
+  opacity: 0.72;
+}
+
+.config-route-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+}
+
+.config-form-toolbar {
+  margin-top: 8px;
+  padding: 18px 0 6px;
+  border-top: 1px solid rgba(115, 225, 255, 0.16);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 17, 31, 0) 0%,
+    rgba(8, 17, 31, 0.94) 22%,
+    rgba(8, 17, 31, 0.98) 100%
+  );
+}
+
+.config-panel--drawer .config-form-toolbar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  width: min(560px, 100vw);
+  padding: 18px 24px 18px;
+  border-top: 1px solid rgba(115, 225, 255, 0.16);
+  background: linear-gradient(
+    180deg,
+    rgba(8, 17, 31, 0.82) 0%,
+    rgba(8, 17, 31, 0.96) 30%,
+    rgba(8, 17, 31, 1) 100%
+  );
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.config-panel--page .config-form-toolbar {
+  position: sticky;
+  bottom: 0;
+}
+
 .config-title {
   margin: 8px 0 16px;
 }
@@ -100,6 +351,33 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  background:
+    radial-gradient(circle at top, rgba(20, 58, 118, 0.24), transparent 42%),
+    linear-gradient(180deg, #08111f 0%, #050b16 55%, #03070f 100%);
+}
+
+.map-shell canvas {
+  background: transparent;
+}
+
+.map-config-trigger {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 12;
+  height: 40px;
+  padding-inline: 16px;
+  border: 1px solid rgba(91, 220, 255, 0.28);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(11, 97, 180, 0.92), rgba(6, 44, 92, 0.92));
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.28),
+    0 0 24px rgba(0, 174, 255, 0.16);
+}
+
+.map-config-trigger:hover,
+.map-config-trigger:focus {
+  background: linear-gradient(180deg, rgba(21, 117, 208, 0.96), rgba(8, 56, 108, 0.96)) !important;
 }
 
 .map-loading {

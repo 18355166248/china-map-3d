@@ -1,42 +1,48 @@
 import { useEffect, useRef, useState } from "react";
+import { Button } from "antd";
 import "./App.css";
+import MapConfigDrawer from "./components/MapConfigDrawer";
+import { writeLocalConfig } from "./config/local";
+import { loadActiveMapConfig } from "./config/runtime";
 import { createMapScene } from "./scene/createMapScene";
-import { loadConfig } from "./config";
+import type { MapSceneRuntime } from "./scene/createMapScene";
+import type { MapSceneConfig } from "./scene/types";
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const runtimeRef = useRef<MapSceneRuntime | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [configOpen, setConfigOpen] = useState(false);
+  const [config, setConfig] = useState<MapSceneConfig | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     let cancelled = false;
-    let cleanup: (() => void) | undefined;
-
-    // 监听钻取时的内部加载态
-    const handleLoading = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { loading?: boolean };
-      if (typeof detail?.loading === "boolean") setLoading(detail.loading);
+    const handleLoading = (event: Event) => {
+      const detail = (event as CustomEvent).detail as { loading?: boolean };
+      if (typeof detail?.loading === "boolean") {
+        setLoading(detail.loading);
+      }
     };
+
     canvas.addEventListener("map-loading", handleLoading as EventListener);
 
-    // 从 JSON 文件加载配置
-    loadConfig({
-      configUrl: "/config/default.json",
-    })
-      .then((config) => {
+    void loadActiveMapConfig()
+      .then((nextConfig) => {
         if (cancelled) return;
-        return createMapScene(canvas, config);
+        setConfig(nextConfig);
+        return createMapScene(canvas, nextConfig);
       })
       .then((runtime) => {
         if (cancelled || !runtime) {
           runtime?.destroy();
           return;
         }
+        runtimeRef.current = runtime;
         setLoading(false);
-        cleanup = () => runtime.destroy();
       })
       .catch((err) => {
         if (cancelled) return;
@@ -48,26 +54,46 @@ export default function App() {
     return () => {
       cancelled = true;
       canvas.removeEventListener("map-loading", handleLoading as EventListener);
-      cleanup?.();
+      runtimeRef.current?.destroy();
+      runtimeRef.current = null;
     };
   }, []);
 
+  const handleApplyConfig = async (nextConfig: MapSceneConfig) => {
+    writeLocalConfig(nextConfig);
+    setConfig(nextConfig);
+    await runtimeRef.current?.updateConfig(nextConfig);
+    setConfigOpen(false);
+  };
+
   return (
-    // 使用带有相对定位的容器，承载画布与炫酷 loading 叠层
     <div className="map-shell">
       <canvas
         ref={canvasRef}
         style={{ width: "100vw", height: "100vh", display: "block" }}
       />
-      {loading && (
-        // 炫酷圆环 + 呼吸光晕，统一文案为 "loading"
+      <Button
+        type="primary"
+        className="map-config-trigger"
+        onClick={() => setConfigOpen(true)}
+      >
+        配置
+      </Button>
+      {config ? (
+        <MapConfigDrawer
+          config={config}
+          open={configOpen}
+          onApply={handleApplyConfig}
+          onClose={() => setConfigOpen(false)}
+        />
+      ) : null}
+      {loading ? (
         <div className="map-loading">
           <div className="map-loading__halo" />
           <div className="map-loading__label">loading</div>
         </div>
-      )}
-      {error && (
-        // 保留错误提示的覆盖层
+      ) : null}
+      {error ? (
         <div
           style={{
             position: "absolute",
@@ -83,7 +109,7 @@ export default function App() {
         >
           loading error: {error}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

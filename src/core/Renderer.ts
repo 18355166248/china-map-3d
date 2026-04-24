@@ -33,6 +33,7 @@ class Renderer {
     this.instance.setSize(sizes.width, sizes.height, false);
     this.instance.setPixelRatio(sizes.pixelRatio);
     this.instance.shadowMap.enabled = true;
+    this.instance.setClearColor(0x040b18, 1);
 
     // CSS2DRenderer 叠加在 canvas 上方，pointer-events:none 不阻断鼠标事件
     this.css2d = new CSS2DRenderer();

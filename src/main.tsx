@@ -5,7 +5,6 @@ import './index.css'
 import App from './App'
 import ConfigPage from './pages/ConfigPage'
 
-// BrowserRouter 路由：/ → 地图；/config → 配置页
 const router = createBrowserRouter([
   { path: '/', element: <App /> },
   { path: '/config', element: <ConfigPage /> },

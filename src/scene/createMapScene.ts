@@ -233,8 +233,6 @@ export class MapSceneRuntime {
         ...this.config.camera,
       });
       this.setupDrill(this.currentLevel, kv);
-    } else if (changedKeys.has("data")) {
-      // no-op: covered above
     } else if (previousConfig.data.drill?.enabled !== this.config.data.drill?.enabled) {
       const kv = computeKV({
         geojsonProj: this.currentLevel.projected,
@@ -554,6 +552,7 @@ export class MapSceneRuntime {
 
   private setupDrill(initialLevel: LevelState, initialKv: KVResult): void {
     this.drill?.dispose();
+    this.drill = undefined;
     if (this.config.data.drill?.enabled === false) return;
 
     this.drill = new DrillController(this.layer, {
@@ -608,7 +607,7 @@ export class MapSceneRuntime {
       this.moduleRegistry.get("flylines")?.setVisible?.(!loading);
       // 若当前层没有飞线数据，保持隐藏，等有数据再显示（FlylineModule 内部已二次判断）
       this.moduleRegistry.get("particles")?.setVisible?.(!loading);
-      (this.moduleRegistry.get("highlight") as any)?.setVisible?.(!loading);
+      this.moduleRegistry.get("highlight")?.setVisible?.(!loading);
       // 通知外部 UI
       this.canvas.dispatchEvent(
         new CustomEvent("map-loading", { detail: { loading } }),

@@ -21,6 +21,12 @@ class CameraManager {
   private canvas: HTMLCanvasElement;
   private isOrthographic: boolean;
 
+  // 相机旋转限制，防止超出可视范围
+  // 方位角限制，防止超出可视范围
+  private readonly maxAzimuthOffset = THREE.MathUtils.degToRad(90);
+  // 极角限制，防止超出可视范围
+  private readonly maxPolarOffset = THREE.MathUtils.degToRad(90);
+
   constructor({
     sizes,
     scene,
@@ -80,6 +86,16 @@ class CameraManager {
     this.controls.minDistance = status.minDistance;
     this.controls.maxDistance = status.maxDistance;
     this.controls.update();
+
+    const azimuth = this.controls.getAzimuthalAngle();
+    const polar = this.controls.getPolarAngle();
+    this.controls.minPolarAngle = Math.max(0.01, polar - this.maxPolarOffset);
+    this.controls.maxPolarAngle = Math.min(
+      Math.PI / 2,
+      polar + this.maxPolarOffset,
+    );
+    this.controls.minAzimuthAngle = azimuth - this.maxAzimuthOffset;
+    this.controls.maxAzimuthAngle = azimuth + this.maxAzimuthOffset;
   }
 
   // O 键切正交，P 键切透视，切换后保持 position 不变（仅改投影方式）

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@turf/turf": "^7.3.4",
+    "antd": "^6.3.6",
     "earcut": "^3.0.2",
     "geobuf": "^3.0.2",
     "pbf": "^4.0.1",
