@@ -90,10 +90,7 @@ class CameraManager {
     const azimuth = this.controls.getAzimuthalAngle();
     const polar = this.controls.getPolarAngle();
     this.controls.minPolarAngle = Math.max(0.01, polar - this.maxPolarOffset);
-    this.controls.maxPolarAngle = Math.min(
-      Math.PI / 2,
-      polar + this.maxPolarOffset,
-    );
+    this.controls.maxPolarAngle = Math.PI;
     this.controls.minAzimuthAngle = azimuth - this.maxAzimuthOffset;
     this.controls.maxAzimuthAngle = azimuth + this.maxAzimuthOffset;
   }
